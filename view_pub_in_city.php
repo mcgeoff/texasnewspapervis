@@ -1,5 +1,5 @@
 
-<script type="text/javascript" src="../protovis-3.2/protovis-r3.2.js" />
+<script type="text/javascript" src="./protovis-r3.2.js" />
 <script type="text/javascript+protovis">
 
 /** A simple sparkline with optional dots. */
