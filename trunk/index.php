@@ -79,6 +79,9 @@ Legend
 
 </table>
 
+<div><a href="map_count.html">Map of Count By City</a></div>
+<div><a href="city_year.html">Plots of Count By City</a></div>
+
 
 </body>
 </html>
