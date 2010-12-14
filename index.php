@@ -25,6 +25,32 @@ include("view_map.php");
 ?>
 
 <html>
+<head>
+
+<style type="text/css">
+#centercolumn { 
+ float: left;
+ color: #333;
+ background: #FFFFFF;
+ width: 60%;
+ display: inline;
+}
+
+#leftcolumn { 
+ color: #333;
+ background: #EBE3CD;
+ width: 20%;
+ float: left;
+}
+
+#rightcolumn { 
+ color: #333;
+ background: #EBE3CD;
+ width: 20%;
+ float: left;
+}
+</style>
+</head>
 <body>
 
 <table border="1" width="100%">
@@ -52,28 +78,23 @@ include("view_map.php");
 
 <tr><td>
 
-<table border="1" width="100%"><tr>
 
 <!-- Pub in City -->
-<td width="30%">
-<?php
-view_pub_in_city();
-?>
-</td>
+<div id="leftcolumn">
+<?php view_pub_in_city(); ?>
+Left
+</div>
 
 <!-- Map -->
-<td width="50%">
-<?php
-view_map();
-?>
-</td>
+<div id="centercolumn">
+<?php //view_map(); ?>
+CENTER
+</div>
 
 <!-- Legend -->
-<td width="20%">
+<div id="rightcolumn">
 Legend
-</td>
-
-</tr></table>
+</div>
 
 </td></tr>
 
