@@ -102,7 +102,9 @@ function view_pub_in_city() {
     //echo "<table>";
     foreach (array_keys($pubInCity) as $pub) {
         $lineData = json_encode(intMap2Array(percentGoodByYear($pubInCity[$pub]), 1820, 2010));
-        echo "<p>".clampString($pub, 30)."</p>\n";
+        echo "<p>".clampString($pub, 30).
+             '<canvas id="'.$pub.'" width="150" height="30"></canvas>'.
+             "</p>\n";
         /*
         echo "<tr>"; echo "<td>";
         echo clampString($pub, 30);
@@ -152,6 +154,10 @@ function getMarkerArray($year) {
     }
 }
 
+// TODO query publications by year, and json_encode here
+function getPubsInfo($city) {
+    echo "yea"."\n";
+}
 ?>
 
 <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
@@ -182,6 +188,9 @@ function getMarkerArray($year) {
       <?php getMarkerArray(getSessionValue("currentYear")); ?>
       ];
   var markers = [];
+  var pubsInfo = [
+      <?php getPubsInfo(getSessionValue("currentCity")); ?>
+      ];
 
   function initialize() {
     var myLatlng = new google.maps.LatLng(30.30, -97.70);
@@ -195,6 +204,8 @@ function getMarkerArray($year) {
     addMarkers(markerLoc);
 
     showMarkers();
+
+    drawTrends();
   }
 
   function addMarkers(markerLoc) {
@@ -206,19 +217,33 @@ function getMarkerArray($year) {
           marker = new google.maps.Marker({
               position: loc,
               map: map,
-              title: "TODO",
           });
 
-          var infowindow = new google.maps.InfoWindow({
-              content: markerLoc[i]["city"],
-          });
+          var infowindowContent = infowindowMessage(markerLoc[i]);
 
-          google.maps.event.addListener(marker, "click", function() {
-              infowindow.open(map, marker);
-          });
+          addInfowindowToMarker(marker, infowindowContent);
 
           markers.push(marker);
       }
+  }
+
+  function infowindowMessage(markerContent) {
+      return "".concat(
+          "In year ", markerContent["year"],
+          ", ", markerContent["city"],
+          " has ", markerContent["mGood"], " good characters",
+          " out of ", markerContent["mTotal"], " in total."
+          );
+  }
+
+  function addInfowindowToMarker(marker, message) {
+      var infowindow = new google.maps.InfoWindow({
+          content: message,
+      });
+
+      google.maps.event.addListener(marker, "click", function() {
+          infowindow.open(map, marker);
+      });
   }
 
   function showMarkers() {
@@ -237,25 +262,39 @@ function getMarkerArray($year) {
       }
   }
 
+  /**
+   * call drawPubTrend() for each pub in the city
+   */
+  function drawTrends() {
+      for (i in pubsInfo) {
+          drawPubTrend(pubsInfo[i]);
+      }
+  }
+
+  /**
+   * draw trend the given pub, encoded in json format
+   */
+  function drawPubTrend(pub) {
+      //var canvas = document.getElementsById(pub[""]);  // match with canvas tag id
+      if (canvas.getContext) {
+          var ctx = canvas.getContext('2d');
+          // TODO drawing code
+      }
+  }
 </script>
-
-<!--
-<script type="text/javascript" src="./sparkline.js" />
--->
-
+<!-- <script type="text/javascript" src="./sparkline.js" /> -->
 </head>
 
 <body onload="initialize()">
 
+  <!-- Title Bar -->
   <h1>Texas Newspaper Collection</h1>
 
   <!-- search bar -->
   <form method="GET" action="index.php">
-  <input type="text" name="currentYear"
-         value="<?php echo getSessionValue("currentYear") ?>">
-  <input type="text" name="currentCity"
-         value="<?php echo getSessionValue("currentCity") ?>">
-  <input type="submit" value="Set State"></input>
+    <input type="text" name="currentYear" value="<?php echo getSessionValue("currentYear") ?>">
+    <input type="text" name="currentCity" value="<?php echo getSessionValue("currentCity") ?>">
+    <input type="submit" value="Set State"></input>
   </form>
 
   <!-- left column -->
@@ -273,7 +312,6 @@ function getMarkerArray($year) {
     <a href="map_count.html">Map of Count By City</a>
     <a href="city_year.html">Plots of Count By City</a>
   </div>
-
 
 </body>
 </html>
