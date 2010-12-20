@@ -11,8 +11,8 @@ function getSessionValue($key) {
     }
     return $_SESSION[$key];
 }
-echo "Current Year = ".getSessionValue("currentYear")."<br/>";
-echo "Current City = ".getSessionValue("currentCity")."<br/>";
+//echo "Current Year = ".getSessionValue("currentYear")."<br/>";
+//echo "Current City = ".getSessionValue("currentCity")."<br/>";
 ?>
 
 <?php
@@ -99,12 +99,13 @@ function view_pub_in_city() {
             array("Good" => $good, "Total" => $total);
     }
 
-    //echo "<table>";
+    echo "<table>";
     foreach (array_keys($pubInCity) as $pub) {
         $lineData = json_encode(intMap2Array(percentGoodByYear($pubInCity[$pub]), 1820, 2010));
-        echo "<p>".clampString($pub, 30).
-             '<canvas id="'.$pub.'" width="150" height="30"></canvas>'.
-             "</p>\n";
+        echo '<tr>';
+        echo '<td>'.clampString($pub, 30).'</td>'.
+             '<td><canvas id="'.$pub.'" width="150" height="20"></canvas></td>';
+        echo '</tr>'."\n";
         /*
         echo "<tr>"; echo "<td>";
         echo clampString($pub, 30);
@@ -118,7 +119,7 @@ function view_pub_in_city() {
         echo "</td>"; echo "</tr>";
         */
     }
-    //echo "</table>";
+    echo "</table>";
 }
 
 
@@ -198,6 +199,8 @@ function getPubsInfo() {
   }
 </style>
 
+<script type="text/javascript" src="./protovis-r3.2.js"></script>
+<script type="text/javascript" src="./sparkline.js"></script>
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
 <script type="text/javascript">
   // global structures
@@ -211,7 +214,7 @@ function getPubsInfo() {
       ];
 
   function initialize() {
-    var myLatlng = new google.maps.LatLng(30.30, -97.70);
+    var myLatlng = new google.maps.LatLng(32.20, -99.00);
     var myOptions = {
       zoom: 6,
       center: myLatlng,
@@ -296,8 +299,8 @@ function getPubsInfo() {
       if (canvas.getContext) {
           var ctx = canvas.getContext('2d');
           // TODO drawing code
-          ctx.fillStype = "rgb(200, 0, 0)";
-          ctx.fillRect(10, 10, 55, 50);
+          ctx.fillStyle = "rgb(255,0,0)";
+          ctx.fillRect(0, 0, 150, 20);
       }
   }
 
@@ -306,7 +309,6 @@ function getPubsInfo() {
           document.createTextNode(msg.toString()));
   }
 </script>
-<!-- <script type="text/javascript" src="./sparkline.js" /> -->
 </head>
 
 <body onload="initialize()">
@@ -333,8 +335,8 @@ function getPubsInfo() {
 
   <!-- right column -->
   <div id="rightcolumn">
-    <a href="map_count.html">Map of Count By City</a>
-    <a href="city_year.html">Plots of Count By City</a>
+    <div><a href="map_count.html">Map of Count By City</a></div>
+    <div><a href="city_year.html">Plots of Count By City</a></div>
   </div>
 
   <div id="debug"></div>
