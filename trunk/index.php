@@ -154,9 +154,27 @@ function getMarkerArray($year) {
     }
 }
 
-// TODO query publications by year, and json_encode here
-function getPubsInfo($city) {
-    echo "yea"."\n";
+// query publications information, and json_encode here
+function getPubsInfo() {
+    try {
+        $db = dbConnect();
+        $db->beginTransaction();
+
+        // TODO replace with join results
+        $query = 'select distinct pub, city from newspaper_count where city="'.getSessionValue("currentCity").'"';
+        $result = $db->query($query)->fetchAll();
+
+        foreach ($result as $row) {
+            echo json_encode($row).",\n";
+        }
+
+        $db->commit();
+        $db = null;
+    }
+    catch (PDOException $e) {
+        $e->getMessage();
+        exit();
+    }
 }
 ?>
 
@@ -166,16 +184,16 @@ function getPubsInfo($city) {
 
 <style type="text/css">
   #leftcolumn {
-      width: 300px;
-      float: left;
-  }
-  #rightcolumn {
-      width: 200px;
+      width: 35%;
       float: left;
   }
   #map_canvas {
-      width: 500px;
+      width: 50%;
       height: 500px;
+      float: left;
+  }
+  #rightcolumn {
+      width: 15%;
       float: left;
   }
 </style>
@@ -198,11 +216,10 @@ function getPubsInfo($city) {
       zoom: 6,
       center: myLatlng,
       mapTypeId: google.maps.MapTypeId.ROADMAP
-    }
+    };
+
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
-
     addMarkers(markerLoc);
-
     showMarkers();
 
     drawTrends();
@@ -266,7 +283,7 @@ function getPubsInfo($city) {
    * call drawPubTrend() for each pub in the city
    */
   function drawTrends() {
-      for (i in pubsInfo) {
+      for (var i = 0; i < pubsInfo.length; i++) {
           drawPubTrend(pubsInfo[i]);
       }
   }
@@ -275,11 +292,18 @@ function getPubsInfo($city) {
    * draw trend the given pub, encoded in json format
    */
   function drawPubTrend(pub) {
-      //var canvas = document.getElementsById(pub[""]);  // match with canvas tag id
+      var canvas = document.getElementById(pub["pub"]);  // match with canvas tag id
       if (canvas.getContext) {
           var ctx = canvas.getContext('2d');
           // TODO drawing code
+          ctx.fillStype = "rgb(200, 0, 0)";
+          ctx.fillRect(10, 10, 55, 50);
       }
+  }
+
+  function debug(msg) {
+      document.getElementById('debug').appendChild(
+          document.createTextNode(msg.toString()));
   }
 </script>
 <!-- <script type="text/javascript" src="./sparkline.js" /> -->
@@ -312,6 +336,8 @@ function getPubsInfo($city) {
     <a href="map_count.html">Map of Count By City</a>
     <a href="city_year.html">Plots of Count By City</a>
   </div>
+
+  <div id="debug"></div>
 
 </body>
 </html>
