@@ -63,7 +63,6 @@ function getStatsByCity() {
 ?>
 
 <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
-
 <title>Texas Newspaper Collection</title>
 
 <style type="text/css">
@@ -87,7 +86,10 @@ function getStatsByCity() {
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
 <script type="text/javascript">
 
-// global data section
+/*
+ * global data section
+ */
+
 var statsByPub  = <?php getStatsByPub(); ?>;
 var statsByCity = <?php getStatsByCity(); ?>;
 var currCity = "Austin";  // default value
@@ -96,7 +98,9 @@ var map;
 var markers = [];
 
 
-// js method section
+/*
+ * js method section
+ */
 
 function addLeftColumnTable() {
     var content = document.getElementById("leftcolumn");
@@ -105,9 +109,17 @@ function addLeftColumnTable() {
     content.appendChild(tbl);
 }
 
-function updateCurrCity() {
+function updateCurrCityFromForm() {
     currCity = document.form_city.city.value;
+    onCurrCity();
+}
 
+function updateCurrCityFromMap(city) {
+    currCity = city;
+    onCurrCity();
+}
+
+function onCurrCity() {
     var tbl = document.getElementById("infoTable");
 
     while (tbl.rows.length>0) {
@@ -127,7 +139,7 @@ function updateCurrCity() {
     }
 }
 
-  function initialize() {
+function initialize() {
     var myLatlng = new google.maps.LatLng(32.20, -99.00);
     var myOptions = {
       zoom: 6,
@@ -140,64 +152,68 @@ function updateCurrCity() {
     showMarkers(currYear);
 
     addLeftColumnTable();
-  }
+}
 
-  function addMarkers(markerLoc) {
-      for (i in markerLoc) {
-          var loc = new google.maps.LatLng(
-              parseFloat(markerLoc[i]["lat"]),
-              parseFloat(markerLoc[i]["lng"]));
+function addMarkers(markerLoc) {
+    for (i in markerLoc) {
+        var loc = new google.maps.LatLng(
+            parseFloat(markerLoc[i]["lat"]),
+            parseFloat(markerLoc[i]["lng"]));
 
-          marker = new google.maps.Marker({
-              position: loc,
-              map: map,
-          });
+        marker = new google.maps.Marker({
+            position: loc,
+            map: map,
+        });
 
-          var infowindowContent = infowindowMessage(markerLoc[i]);
+        addInfowindowToMarker(marker, markerLoc[i]);
 
-          addInfowindowToMarker(marker, infowindowContent);
+        markers.push(marker);
+    }
+}
 
-          markers.push(marker);
-      }
-  }
+function infowindowMessage(markerContent) {
+    return "".concat(
+        "In year ", markerContent["year"],
+        ", ", markerContent["city"],
+        " has ", markerContent["mGood"], " good characters",
+        " out of ", markerContent["mTotal"], " in total."
+        );
+}
 
-  function infowindowMessage(markerContent) {
-      return "".concat(
-          "In year ", markerContent["year"],
-          ", ", markerContent["city"],
-          " has ", markerContent["mGood"], " good characters",
-          " out of ", markerContent["mTotal"], " in total."
-          );
-  }
+function addInfowindowToMarker(marker, markerContent) {
+    var infowindow = new google.maps.InfoWindow({
+        content: infowindowMessage(markerContent),
+        maxWidth: 70,
+    });
 
-  function addInfowindowToMarker(marker, message) {
-      var infowindow = new google.maps.InfoWindow({
-          content: message,
-      });
+    google.maps.event.addListener(marker, "mouseover", function() {
+        infowindow.open(map, marker);
+        updateCurrCityFromMap(markerContent["city"]);
+    });
 
-      google.maps.event.addListener(marker, "click", function() {
-          infowindow.open(map, marker);
-      });
-  }
+    google.maps.event.addListener(marker, "mouseout", function() {
+        infowindow.close();
+    });
+}
 
-  function showMarkers(year) {
-      if (markers) {
-          for (i in markers) {
-              markers[i].setMap(map);
-              /*
-              markers[i].setMap(null);
-              if (year == markers) {
-                  markers[i].setMap(map);
-              }
-              */
-          }
-      }
-  }
+function showMarkers(year) {
+    if (markers) {
+        for (i in markers) {
+            markers[i].setMap(map);
+            /*
+            markers[i].setMap(null);
+            if (year == markers) {
+                markers[i].setMap(map);
+            }
+            */
+        }
+    }
+}
 
-  function debug(msg) {
-      document.getElementById('debug').appendChild(
-          document.createTextNode(msg.toString()));
-  }
+function debug(msg) {
+    document.getElementById('debug').appendChild(
+        document.createTextNode(msg.toString()));
+}
 </script>
 </head>
 
@@ -214,7 +230,7 @@ function updateCurrCity() {
 
   <form name="form_city">
     <input type="text" name="city">
-    <input type="button" value="set city" onclick="updateCurrCity();">
+    <input type="button" value="set city" onclick="updateCurrCityFromForm();">
   </form>
 
   <!-- left column -->
