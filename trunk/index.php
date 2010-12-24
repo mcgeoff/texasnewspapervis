@@ -3,19 +3,6 @@
 <head>
 
 <?php
-session_start();
-
-function getSessionValue($key) {
-    if (isset($_GET[$key])) {
-        $_SESSION[$key] = $_GET[$key];
-    }
-    return $_SESSION[$key];
-}
-//echo "Current Year = ".getSessionValue("currentYear")."<br/>";
-//echo "Current City = ".getSessionValue("currentCity")."<br/>";
-?>
-
-<?php
 
 function dbConnect() {
     $dbname = "./newspaper.db";
@@ -29,19 +16,21 @@ function dbConnect() {
     return $db;
 }
 
-function getPubInCity($cityName) {
+function getStatsByPub() {
     try {
         $db = dbConnect();
         $db->beginTransaction();
 
-        $query = "select * from pub_by_year where city=\"".
-                 $cityName ."\"";
+        $query = 'select pub, year, mGood, mTotal, location.city,
+                  longitude as lng, latitude as lat
+                  from pub_by_year, location
+                  where pub_by_year.city=location.city';
         $result = $db->query($query)->fetchAll();
 
         $db->commit();
         $db = null;
 
-        return $result;
+        echo json_encode($result);
     }
     catch (PDOException $e) {
         $e->getMessage();
@@ -49,93 +38,21 @@ function getPubInCity($cityName) {
     }
 }
 
-function clampString($s, $len) {
-    $result = $s;
-    if (strlen($s) > $len) {
-        $result = substr($s, 0, $len-3) . "...";
-    }
-    return $result;
-}
-
-/**
- *  Convert a map with int key to a continuous array
- *  with $begin and $end as the range of index
- *  e.g.:
- *      array( 1933 => 100, 1935 => 200 )
- *          with $begin = 1930, $end = 1939
- *  will be converted to
- *      array( 0, 0, 0, 100, 0, 200, 0, 0, 0, 0)
- */
-function intMap2Array($intMap, $begin, $end) {
-    $result = array(0);
-    $result = array_pad($result, $end - $begin + 1, 0);
-    foreach (array_keys($intMap) as $idx) {
-        $result[$idx - $begin] = $intMap[$idx];
-    }
-    return $result;
-}
-
-function percentGoodByYear($pubStats) {
-    $result = array();
-    foreach (array_keys($pubStats) as $k) {
-        $year = (int)$k;
-        $result[$year] = (float)$pubStats[$k]["Good"] / (float)$pubStats[$k]["Total"];
-    }
-    return $result;
-}
-
-function view_pub_in_city() {
-    $currCity = $_SESSION["currentCity"];
-
-    $pubInCity = array();
-    $pubs = getPubInCity($currCity);
-    foreach ($pubs as $row) {
-        $pub   = $row["pub"];
-        $year  = $row["year"];
-        $good  = $row["mGood"];
-        $total = $row["mTotal"];
-
-        $pubInCity[$pub][$year] =
-            array("Good" => $good, "Total" => $total);
-    }
-
-    echo "<table>";
-    foreach (array_keys($pubInCity) as $pub) {
-        $lineData = json_encode(intMap2Array(percentGoodByYear($pubInCity[$pub]), 1820, 2010));
-        echo '<tr>';
-        echo '<td>'.clampString($pub, 30).'</td>'.
-             '<td><canvas id="'.$pub.'" width="150" height="20"></canvas></td>';
-        echo '</tr>'."\n";
-        /*
-        echo "<tr>"; echo "<td>";
-        echo clampString($pub, 30);
-        echo "</td>"; echo "<td>";
-        echo '
-        <script type="text/javascript+protovis">
-            inc("sparkline.js");
-            var a = '.$lineData.';
-            sparkline(a, 1);
-        </script>';
-        echo "</td>"; echo "</tr>";
-        */
-    }
-    echo "</table>";
-}
-
-
-function getPubByYear($year) {
+function getStatsByCity() {
     try {
         $db = dbConnect();
         $db->beginTransaction();
 
-        $query = "select * from city_by_year, location where city_by_year.city=location.city and year=\"".
-                 $year ."\"";
+        $query = 'select city_by_year.city, year, mGood, mTotal,
+                  longitude as lng, latitude as lat
+                  from city_by_year, location
+                  where city_by_year.city=location.city';
         $result = $db->query($query)->fetchAll();
 
         $db->commit();
         $db = null;
 
-        return $result;
+        echo json_encode($result);
     }
     catch (PDOException $e) {
         $e->getMessage();
@@ -143,40 +60,6 @@ function getPubByYear($year) {
     }
 }
 
-
-/**
- *  Generate marker variable array
- *  which will be used to draw on the map
- */
-function getMarkerArray($year) {
-    $pubByYear = getPubByYear($year);
-    foreach ($pubByYear as $row) {
-        echo json_encode($row).",\n";
-    }
-}
-
-// query publications information, and json_encode here
-function getPubsInfo() {
-    try {
-        $db = dbConnect();
-        $db->beginTransaction();
-
-        // TODO replace with join results
-        $query = 'select distinct pub, city from newspaper_count where city="'.getSessionValue("currentCity").'"';
-        $result = $db->query($query)->fetchAll();
-
-        foreach ($result as $row) {
-            echo json_encode($row).",\n";
-        }
-
-        $db->commit();
-        $db = null;
-    }
-    catch (PDOException $e) {
-        $e->getMessage();
-        exit();
-    }
-}
 ?>
 
 <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
@@ -203,15 +86,46 @@ function getPubsInfo() {
 <script type="text/javascript" src="./sparkline.js"></script>
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
 <script type="text/javascript">
-  // global structures
-  var map;
-  var markerLoc = [
-      <?php getMarkerArray(getSessionValue("currentYear")); ?>
-      ];
-  var markers = [];
-  var pubsInfo = [
-      <?php getPubsInfo(getSessionValue("currentCity")); ?>
-      ];
+
+// global data section
+var statsByPub  = <?php getStatsByPub(); ?>;
+var statsByCity = <?php getStatsByCity(); ?>;
+var currCity = "Austin";  // default value
+var currYear = "1950";    // default value
+var map;
+var markers = [];
+
+
+// js method section
+
+function addLeftColumnTable() {
+    var content = document.getElementById("leftcolumn");
+    var tbl = document.createElement("table");
+    tbl.id = "infoTable";
+    content.appendChild(tbl);
+}
+
+function updateCurrCity() {
+    currCity = document.form_city.city.value;
+
+    var tbl = document.getElementById("infoTable");
+
+    while (tbl.rows.length>0) {
+        tbl.deleteRow(0);
+    }
+
+    for (var i = 0; i < statsByPub.length; i++) {
+        if (statsByPub[i]["city"] != currCity) {
+            continue;
+        }
+        var tmpRow = tbl.insertRow();
+
+        tmpRow.insertCell(0).innerHTML = statsByPub[i]["city"];
+        tmpRow.insertCell(1).innerHTML = statsByPub[i]["mGood"];
+        tmpRow.insertCell(2).innerHTML = statsByPub[i]["mTotal"];
+        tmpRow.insertCell(3).innerHTML = statsByPub[i]["year"];
+    }
+}
 
   function initialize() {
     var myLatlng = new google.maps.LatLng(32.20, -99.00);
@@ -222,17 +136,17 @@ function getPubsInfo() {
     };
 
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
-    addMarkers(markerLoc);
-    showMarkers();
+    addMarkers(statsByCity);
+    showMarkers(currYear);
 
-    drawTrends();
+    addLeftColumnTable();
   }
 
   function addMarkers(markerLoc) {
       for (i in markerLoc) {
           var loc = new google.maps.LatLng(
-              parseFloat(markerLoc[i]["latitude"]),
-              parseFloat(markerLoc[i]["longitude"]));
+              parseFloat(markerLoc[i]["lat"]),
+              parseFloat(markerLoc[i]["lng"]));
 
           marker = new google.maps.Marker({
               position: loc,
@@ -266,41 +180,17 @@ function getPubsInfo() {
       });
   }
 
-  function showMarkers() {
+  function showMarkers(year) {
       if (markers) {
           for (i in markers) {
               markers[i].setMap(map);
-          }
-      }
-  }
-
-  function hideMarkers() {
-      if (markers) {
-          for (i in markers) {
+              /*
               markers[i].setMap(null);
+              if (year == markers) {
+                  markers[i].setMap(map);
+              }
+              */
           }
-      }
-  }
-
-  /**
-   * call drawPubTrend() for each pub in the city
-   */
-  function drawTrends() {
-      for (var i = 0; i < pubsInfo.length; i++) {
-          drawPubTrend(pubsInfo[i]);
-      }
-  }
-
-  /**
-   * draw trend the given pub, encoded in json format
-   */
-  function drawPubTrend(pub) {
-      var canvas = document.getElementById(pub["pub"]);  // match with canvas tag id
-      if (canvas.getContext) {
-          var ctx = canvas.getContext('2d');
-          // TODO drawing code
-          ctx.fillStyle = "rgb(255,0,0)";
-          ctx.fillRect(0, 0, 150, 20);
       }
   }
 
@@ -317,21 +207,21 @@ function getPubsInfo() {
   <h1>Texas Newspaper Collection</h1>
 
   <!-- search bar -->
-  <form method="GET" action="index.php">
-    <input type="text" name="currentYear" value="<?php echo getSessionValue("currentYear") ?>">
-    <input type="text" name="currentCity" value="<?php echo getSessionValue("currentCity") ?>">
-    <input type="submit" value="Set State"></input>
+  <form name="form_year">
+    <input type="text" name="year">
+    <input type="button" value="set year" onclick='alert("TODO");'>
+  </form>
+
+  <form name="form_city">
+    <input type="text" name="city">
+    <input type="button" value="set city" onclick="updateCurrCity();">
   </form>
 
   <!-- left column -->
-  <div id="leftcolumn">
-    <?php view_pub_in_city(); ?>
-  </div>
+  <div id="leftcolumn"></div>
 
   <!-- canvas for map -->
-  <div id="map_canvas">
-    CENTER
-  </div>
+  <div id="map_canvas"></div>
 
   <!-- right column -->
   <div id="rightcolumn">
