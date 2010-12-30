@@ -12,11 +12,11 @@
   #map_canvas {
       width: 50%;
       height: 500px;
-      float: left;
+      float: right;
   }
   #rightcolumn {
       width: 15%;
-      float: left;
+      float: right;
   }
 </style>
 
@@ -135,9 +135,8 @@ function onCurrCity() {
         tmpRow.insertCell(1).innerHTML = pubTrendByYear[k]["city"];
 
         // TODO
-        tmpRow.insertCell(2).innerHTML =
-            "<script type=\"text\/javascript\">sparkline(walk(100), 1);<\/script>";
-        //tmpRow.insertCell(2).innerHTML = pubTrendByYear[k]["goodPercent"].toString();
+        //tmpRow.insertCell(2).innerHTML = "<script type=\"text\/javascript\">sparkline(walk(100), 1);<\/script>";
+        tmpRow.insertCell(2).innerHTML = pubTrendByYear[k]["goodPercent"].toString();
     }
 }
 
@@ -257,18 +256,16 @@ function debug(msg) {
   <!-- left column -->
   <div id="leftcolumn"></div>
 
-  <!-- canvas for map -->
-  <div id="map_canvas"></div>
-
   <!-- right column -->
   <div id="rightcolumn">
     <div><a href="map_count.html">Map of Count By City</a></div>
     <div><a href="city_year.html">Plots of Count By City</a></div>
+    <div><script type="text/javascript+protovis">sparkline(walk(100), 1);</script></div>
+    <div id="debug"></div>
   </div>
 
-  <div id="debug"></div>
-
-  <div><script type="text/javascript+protovis">sparkline(walk(100), 1);</script></div>
+  <!-- canvas for map -->
+  <div id="map_canvas"></div>
 
 </body>
 </html>
