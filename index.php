@@ -6,7 +6,7 @@
 
 <style type="text/css">
   #leftcolumn {
-      width: 35%;
+      width: 45%;
       float: left;
   }
   #map_canvas {
@@ -15,51 +15,12 @@
       float: right;
   }
   #rightcolumn {
-      width: 15%;
+      width: 5%;
       float: right;
   }
 </style>
 
 <script type="text/javascript" src="./protovis-r3.2.js"></script>
-<script type="text/javascript+protovis">
-/** A simple sparkline with optional dots. */
-function sparkline(data, dots) {
-    var n = data.length,
-        w = n,
-        h = 10,
-        min = pv.min.index(data),
-        max = pv.max.index(data);
-    var vis = new pv.Panel()
-        .width(w)
-        .height(h)
-        .margin(2);
-    vis.add(pv.Line)
-        .data(data)
-        .left(pv.Scale.linear(0, n - 1).range(0, w).by(pv.index))
-        .bottom(pv.Scale.linear(data).range(0, h))
-        .strokeStyle("#000")
-        .lineWidth(1)
-        .add(pv.Dot)
-        .visible(function() (dots && this.index == 0) || this.index == n - 1)
-        .strokeStyle(null)
-        .fillStyle("brown")
-        .radius(2)
-        .add(pv.Dot)
-        .visible(function() dots && (this.index == min || this.index == max))
-        .fillStyle("steelblue");
-    vis.render();
-}
-
-/** Generates a random walk of length n. */
-function walk(n) {
-    var array = [], value = 0, i = 0;
-    while (n-- > 0) {
-        array.push(value += (Math.random() - .5));
-    }
-    return array;
-}
-</script>
-
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
 
 <script type="text/javascript">
@@ -108,19 +69,18 @@ function addLeftColumnTable() {
     content.appendChild(tbl);
 }
 
-function updateCurrCityFromForm() {
-    currCity = document.form_city.city.value;
-    onCurrCity();
-}
-
 function updateCurrCityFromMap(city) {
     currCity = city;
     onCurrCity();
 }
 
 function onCurrCity() {
-    var tbl = document.getElementById("infoTable");
+    // step 1 update current city display
+    var elem = document.getElementById("currCity");
+    elem.innerHTML = "Current city is " + "<b>" + currCity + "</b>";
 
+    // step 2 update info table in left column
+    var tbl = document.getElementById("infoTable");
     while (tbl.rows.length>0) {
         tbl.deleteRow(0);
     }
@@ -131,12 +91,31 @@ function onCurrCity() {
         }
         var tmpRow = tbl.insertRow();
 
-        tmpRow.insertCell(0).innerHTML = pubTrendByYear[k]["pub"];
-        tmpRow.insertCell(1).innerHTML = pubTrendByYear[k]["city"];
+        var cell0 = tmpRow.insertCell(0)
+        cell0.innerHTML = pubTrendByYear[k]["pub"];
+        cell0.width = "50%";
 
         // TODO
-        //tmpRow.insertCell(2).innerHTML = "<script type=\"text\/javascript\">sparkline(walk(100), 1);<\/script>";
-        tmpRow.insertCell(2).innerHTML = pubTrendByYear[k]["goodPercent"].toString();
+        var a = pubTrendByYear[k]["goodPercent"];
+        var part1 = 
+            '<span style="display: inline-block; ">' +
+            '<svg width="300" height="20" fill="none">' +
+            '<g>';
+        var part2 = '<path stroke-width="1" stroke="blue" d="M0,20 ';
+        for (var i = 0; i < a.length; i++) {
+            if (isNaN(a[i])) {
+                a[i] = 0;
+            }
+            part2 = part2 + 'L' + i + ',' + (20 - 20 * a[i]) + ' ';
+        }
+        part2 = part2 + '"/>';
+        var part3 =
+            '</g>' +
+            '</svg>' +
+            '</span>';
+        var cell1 = tmpRow.insertCell(1);
+        cell1.innerHTML = part1 + part2 + part3;
+        cell1.width = "50%";
     }
 }
 
@@ -248,10 +227,7 @@ function debug(msg) {
     <input type="button" value="set year" onclick='alert("TODO");'>
   </form>
 
-  <form name="form_city">
-    <input type="text" name="city">
-    <input type="button" value="set city" onclick="updateCurrCityFromForm();">
-  </form>
+  <p id="currCity"></p>
 
   <!-- left column -->
   <div id="leftcolumn"></div>
@@ -260,7 +236,6 @@ function debug(msg) {
   <div id="rightcolumn">
     <div><a href="map_count.html">Map of Count By City</a></div>
     <div><a href="city_year.html">Plots of Count By City</a></div>
-    <div><script type="text/javascript+protovis">sparkline(walk(100), 1);</script></div>
     <div id="debug"></div>
   </div>
 
