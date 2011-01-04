@@ -6,7 +6,7 @@
 
 <style type="text/css">
   #leftcolumn {
-      width: 45%;
+      width: 40%;
       float: left;
   }
   #map_canvas {
@@ -15,13 +15,14 @@
       float: right;
   }
   #rightcolumn {
-      width: 5%;
+      width: 10%;
       float: right;
   }
 </style>
 
 <script type="text/javascript" src="./protovis-r3.2.js"></script>
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript" src="http://yui.yahooapis.com/3.2.0/build/yui/yui-min.js"></script>
 
 <script type="text/javascript">
 
@@ -67,6 +68,12 @@ function addLeftColumnTable() {
     var tbl = document.createElement("table");
     tbl.id = "infoTable";
     content.appendChild(tbl);
+}
+
+function onCurrYear() {
+    // step 1 update current year display
+    var elem = document.getElementById("currYear");
+    elem.innerHTML = "Current year is " + "<b>" + currYear + "</b>";
 }
 
 function updateCurrCityFromMap(city) {
@@ -213,7 +220,32 @@ function debug(msg) {
     document.getElementById('debug').appendChild(
         document.createTextNode(msg.toString()));
 }
+
+// Create a YUI instance and request the slider module and its dependencies
+YUI().use("slider", function (Y) {
+ 
+var xSlider; // horizontal Slider
+ 
+function updateCurrYear(e) {
+    currYear = e.newVal;
+    onCurrYear();
+}
+
+// Create a horizontal Slider using all defaults
+xSlider = new Y.Slider({
+    min : 1829,
+    max : 2008,
+    value : 1950,
+    length : '400px' });
+ 
+// Pass the input as the 'this' object inside updateInput
+xSlider.after( "valueChange", updateCurrYear );
+
+// Render the Slider next to the input
+xSlider.render('#horiz_slider'); 
+});
 </script>
+
 </head>
 
 <body onload="initialize()">
@@ -221,13 +253,12 @@ function debug(msg) {
   <!-- Title Bar -->
   <h1>Texas Newspaper Collection</h1>
 
-  <!-- search bar -->
-  <form name="form_year">
-    <input type="text" name="year">
-    <input type="button" value="set year" onclick='alert("TODO");'>
-  </form>
+  <div id="yahoo-com" class="yui3-skin-sam  yui-skin-sam">
+      <p> 1829 <span id="horiz_slider"></span> 2008 </p>
+  </div>
 
-  <p id="currCity"></p>
+  <div><p id="currYear"></p></div>
+  <div><p id="currCity"></p></div>
 
   <!-- left column -->
   <div id="leftcolumn"></div>
