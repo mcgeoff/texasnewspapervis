@@ -43,6 +43,18 @@ var pubTrendByYear = getTrendByYear(statsByPub);
 var map;
 var markers = [];
 
+// Create a YUI instance and request the slider module and its dependencies
+YUI().use("slider", function (Y) {
+    // horizontal Slider
+    var xSlider = new Y.Slider({
+        min : 1829,
+        max : 2008,
+        value : 1950,
+        length : '400px' });
+
+    xSlider.after( "valueChange", updateCurrYearFromSlider );
+    xSlider.render('#horiz_slider'); 
+});
 
 /*
  * js method section
@@ -68,6 +80,11 @@ function addLeftColumnTable() {
     var tbl = document.createElement("table");
     tbl.id = "infoTable";
     content.appendChild(tbl);
+}
+
+function updateCurrYearFromSlider(e) {
+    currYear = e.newVal;
+    onCurrYear();
 }
 
 function onCurrYear() {
@@ -221,29 +238,6 @@ function debug(msg) {
         document.createTextNode(msg.toString()));
 }
 
-// Create a YUI instance and request the slider module and its dependencies
-YUI().use("slider", function (Y) {
- 
-var xSlider; // horizontal Slider
- 
-function updateCurrYear(e) {
-    currYear = e.newVal;
-    onCurrYear();
-}
-
-// Create a horizontal Slider using all defaults
-xSlider = new Y.Slider({
-    min : 1829,
-    max : 2008,
-    value : 1950,
-    length : '400px' });
- 
-// Pass the input as the 'this' object inside updateInput
-xSlider.after( "valueChange", updateCurrYear );
-
-// Render the Slider next to the input
-xSlider.render('#horiz_slider'); 
-});
 </script>
 
 </head>
@@ -257,8 +251,8 @@ xSlider.render('#horiz_slider');
       <p> 1829 <span id="horiz_slider"></span> 2008 </p>
   </div>
 
-  <div><p id="currYear"></p></div>
-  <div><p id="currCity"></p></div>
+  <div><p id="currYear">Current year is</p></div>
+  <div><p id="currCity">Current city is</p></div>
 
   <!-- left column -->
   <div id="leftcolumn"></div>
