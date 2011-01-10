@@ -6,7 +6,7 @@
 
 <style type="text/css">
   #leftcolumn {
-      width: 40%;
+      width: 30%;
       float: left;
   }
   #map_canvas {
@@ -15,7 +15,7 @@
       float: right;
   }
   #rightcolumn {
-      width: 10%;
+      width: 20%;
       float: right;
   }
 </style>
@@ -52,7 +52,7 @@ YUI().use("slider", function (Y) {
         value : 1950,
         length : '400px' });
 
-    xSlider.after( "valueChange", updateCurrYearFromSlider );
+    xSlider.after( "valueChange", updateCurrYear);
     xSlider.render('#horiz_slider'); 
 });
 
@@ -70,14 +70,16 @@ function initialize() {
 
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
     addMarkers(statsByCity);
-    showMarkers(currYear);
+    showMarkers();
 
     addLeftColumnTable();
 
     addPolygon(map);
+
+    updateCurrYear();
+    updateCurrCity(currCity);
 }
 
-// TODO move to a separate file
 function addPolygon(map) {
     var c = [
     new google.maps.LatLng(36.50000,-103.00029),
@@ -438,7 +440,7 @@ function addPolygon(map) {
 
     t = new google.maps.Polygon({
         paths: c,
-        strokeColor: "#111111",
+        strokeColor: "#666666",
         strokeOpacity: 0.8,
         strokeWeight: 4,
         fillColor: "#000000",
@@ -455,28 +457,20 @@ function addLeftColumnTable() {
     content.appendChild(tbl);
 }
 
-function updateCurrYearFromSlider(e) {
-    currYear = e.newVal;
-    onCurrYear();
+function updateCurrYear(e) {
+    if (e != null) {
+        currYear = e.newVal;
+    }
+
+    // step 1 keep only markers with publication in that year
+    showMarkers();
 }
 
-function onCurrYear() {
-    // step 1 update current year display
-    var elem = document.getElementById("currYear");
-    elem.innerHTML = "Current year is " + "<b>" + currYear + "</b>";
-}
-
-function updateCurrCityFromMap(city) {
+function updateCurrCity(city) {
+    // record newly updated city
     currCity = city;
-    onCurrCity();
-}
 
-function onCurrCity() {
-    // step 1 update current city display
-    var elem = document.getElementById("currCity");
-    elem.innerHTML = "Current city is " + "<b>" + currCity + "</b>";
-
-    // step 2 update info table in left column
+    // step 1 update info table in left column
     var tbl = document.getElementById("infoTable");
     while (tbl.rows.length>0) {
         tbl.deleteRow(0);
@@ -492,7 +486,6 @@ function onCurrCity() {
         cell0.innerHTML = pubTrendByYear[k]["pub"];
         cell0.width = "50%";
 
-        // TODO
         var a = pubTrendByYear[k]["goodPercent"];
         var part1 = 
             '<span style="display: inline-block; ">' +
@@ -514,6 +507,25 @@ function onCurrCity() {
         cell1.innerHTML = part1 + part2 + part3;
         cell1.width = "50%";
     }
+
+    // step 2 update city info in right column
+    var city_info = document.getElementById("city_info");
+    var stats = null;
+    for (var i = 0; i < statsByCity.length; i++) {
+        if (statsByCity[i]["city"] == currCity &&
+            statsByCity[i]["year"] == currYear) {
+            stats = statsByCity[i];
+        }
+    }
+    if (stats != null) {
+        city_info.innerHTML = "Year: " + currYear + "<br/>" +
+                              "City: " + currCity + "<br/>" +
+                              "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
+                              "Total Characters Scanned: " + stats["mTotal"] + "<br/>";
+    }
+    else {
+        city_info.innerHTML = "There is no publications at " + currCity + " in the year " + currYear;
+    }
 }
 
 function addMarkers(markerLoc) {
@@ -525,49 +537,31 @@ function addMarkers(markerLoc) {
         marker = new google.maps.Marker({
             position: loc,
             map: map,
+            city: markerLoc[i]["city"],
+            year: markerLoc[i]["year"],
         });
 
-        addInfowindowToMarker(marker, markerLoc[i]);
+        addMarkerListener(marker);
 
         markers.push(marker);
     }
 }
 
-function infowindowMessage(markerContent) {
-    return "".concat(
-        "In year ", markerContent["year"],
-        ", ", markerContent["city"],
-        " has ", markerContent["mGood"], " good characters",
-        " out of ", markerContent["mTotal"], " in total."
-        );
-}
-
-function addInfowindowToMarker(marker, markerContent) {
-    var infowindow = new google.maps.InfoWindow({
-        content: infowindowMessage(markerContent),
-        maxWidth: 70,
-    });
-
+function addMarkerListener(marker) {
     google.maps.event.addListener(marker, "click", function() {
-        updateCurrCityFromMap(markerContent["city"]);
-    });
-
-    google.maps.event.addListener(marker, "click", function() {
-        infowindow.open(map, marker);
-        //infowindow.close();
+        updateCurrCity(marker.city);
     });
 }
 
-function showMarkers(year) {
+function showMarkers() {
     if (markers) {
         for (i in markers) {
-            markers[i].setMap(map);
-            /*
-            markers[i].setMap(null);
-            if (year == markers) {
+            if (currYear == markers[i].year) {
                 markers[i].setMap(map);
             }
-            */
+            else {
+                markers[i].setMap(null);
+            }
         }
     }
 }
@@ -624,9 +618,6 @@ function debug(msg) {
       <p> 1829 <span id="horiz_slider"></span> 2008 </p>
   </div>
 
-  <div><p id="currYear">Current year is</p></div>
-  <div><p id="currCity">Current city is</p></div>
-
   <!-- left column -->
   <div id="leftcolumn"></div>
 
@@ -635,6 +626,8 @@ function debug(msg) {
     <div><a href="map_count.html">Map of Count By City</a></div>
     <div><a href="city_year.html">Plots of Count By City</a></div>
     <div id="debug"></div>
+    <br/> <br/> <br/> <br/>
+    <div id="city_info"></div>
   </div>
 
   <!-- canvas for map -->
