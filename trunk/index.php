@@ -32,7 +32,7 @@
 
 var statsByPub  = <?php getStatsByPub(); ?>;
 var statsByCity = <?php getStatsByCity(); ?>;
-var currCity = "Austin";  // default value
+var currCity = "Abilene";  // default value
 var currYear = "1950";    // default value
 
 var minYear = 1829;
@@ -439,8 +439,8 @@ function addPolygon(map) {
 
     t = new google.maps.Polygon({
         paths: c,
-        strokeColor: "#666666",
-        strokeOpacity: 0.8,
+        strokeColor: "#0000CC",
+        strokeOpacity: 0.6,
         strokeWeight: 4,
         fillColor: "#000000",
         fillOpacity: 0,
@@ -625,18 +625,7 @@ function debug(msg) {
 <body onload="initialize()">
 
   <!-- Title Bar -->
-  <h1>Texas Newspaper Collection</h1>
-
-  <div id="yahoo-com" class="yui3-skin-sam  yui-skin-sam">
-      <span> 1829 </span>
-      <span id="horiz_slider"></span>
-      <span> 2008 </span>
-      <button onClick="changeYearFromButton(-1);"> Move to Previous Year </button>
-      <span id="year_display"></span>
-      <button onClick="changeYearFromButton(+1);"> Move to Next Year </button>
-  </div>
-
-  <br/>
+  <h1> Texas Newspaper Collection </h1>
 
   <!-- left column -->
   <div id="leftcolumn"></div>
@@ -646,12 +635,24 @@ function debug(msg) {
     <div><a href="map_count.html">Map of Count By City</a></div>
     <div><a href="city_year.html">Plots of Count By City</a></div>
     <div id="debug"></div>
-    <br/> <br/> <br/> <br/>
+    <br/> <br/>
     <div id="city_info"></div>
   </div>
 
   <!-- canvas for map -->
+  <div>
+  <span id="yahoo-com" class="yui3-skin-sam  yui-skin-sam">
+      <span> 1829 </span>
+      <span id="horiz_slider"></span>
+      <span> 2008 </span>
+      <br/>
+      <button onClick="changeYearFromButton(-1);"> Move to Previous Year </button>
+      <span id="year_display"></span>
+      <button onClick="changeYearFromButton(+1);"> Move to Next Year </button>
+  </span>
+  <br/> <br/>
   <div id="map_canvas"></div>
+  </div>
 
 </body>
 </html>
