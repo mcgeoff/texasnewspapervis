@@ -44,9 +44,10 @@ var map;
 var markers = [];
 
 // Create a YUI instance and request the slider module and its dependencies
+var xSlider = null;
 YUI().use("slider", function (Y) {
     // horizontal Slider
-    var xSlider = new Y.Slider({
+    xSlider = new Y.Slider({
         min : 1829,
         max : 2008,
         value : 1950,
@@ -70,10 +71,8 @@ function initialize() {
 
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
     addMarkers(statsByCity);
-    showMarkers();
 
     addLeftColumnTable();
-
     addPolygon(map);
 
     updateCurrYear();
@@ -462,8 +461,25 @@ function updateCurrYear(e) {
         currYear = e.newVal;
     }
 
+    onCurrYear();
+}
+
+function changeYearFromButton(step) {
+    currYear = "" + (parseInt(currYear) + step);
+
+    onCurrYear();
+}
+
+function onCurrYear() {
     // step 1 keep only markers with publication in that year
     showMarkers();
+
+    // step 2 keep YUI slider up to date
+    xSlider.setValue(currYear, false, true, false);
+
+    // step 3 update year display
+    var year_disp = document.getElementById("year_display");
+    year_disp.innerHTML = currYear;
 }
 
 function updateCurrCity(city) {
@@ -522,9 +538,6 @@ function updateCurrCity(city) {
                               "City: " + currCity + "<br/>" +
                               "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
                               "Total Characters Scanned: " + stats["mTotal"] + "<br/>";
-    }
-    else {
-        city_info.innerHTML = "There is no publications at " + currCity + " in the year " + currYear;
     }
 }
 
@@ -615,8 +628,15 @@ function debug(msg) {
   <h1>Texas Newspaper Collection</h1>
 
   <div id="yahoo-com" class="yui3-skin-sam  yui-skin-sam">
-      <p> 1829 <span id="horiz_slider"></span> 2008 </p>
+      <span> 1829 </span>
+      <span id="horiz_slider"></span>
+      <span> 2008 </span>
+      <button onClick="changeYearFromButton(-1);"> Move to Previous Year </button>
+      <span id="year_display"></span>
+      <button onClick="changeYearFromButton(+1);"> Move to Next Year </button>
   </div>
+
+  <br/>
 
   <!-- left column -->
   <div id="leftcolumn"></div>
