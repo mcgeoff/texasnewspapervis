@@ -1,24 +1,11 @@
 <!DOCTYPE html>
+<?php include("backend.php"); ?>
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
 <title>Texas Newspaper Collection</title>
 
-<style type="text/css">
-  #leftcolumn {
-      width: 30%;
-      float: left;
-  }
-  #map_canvas {
-      width: 50%;
-      height: 500px;
-      float: right;
-  }
-  #rightcolumn {
-      width: 20%;
-      float: right;
-  }
-</style>
+<link rel="stylesheet" type="text/css" href="style.css" />
 
 <script type="text/javascript" src="./protovis-r3.2.js"></script>
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
@@ -48,9 +35,9 @@ var xSlider = null;
 YUI().use("slider", function (Y) {
     // horizontal Slider
     xSlider = new Y.Slider({
-        min : 1829,
-        max : 2008,
-        value : 1950,
+        min : minYear,
+        max : maxYear,
+        value : parseInt(currYear),
         length : '400px' });
 
     xSlider.after( "valueChange", updateCurrYear);
@@ -642,13 +629,11 @@ function debug(msg) {
   <!-- canvas for map -->
   <div>
   <span id="yahoo-com" class="yui3-skin-sam  yui-skin-sam">
-      <span> 1829 </span>
-      <span id="horiz_slider"></span>
-      <span> 2008 </span>
+      <span> 1829 <span id="horiz_slider"></span> 2008 </span>
       <br/>
-      <button onClick="changeYearFromButton(-1);"> Move to Previous Year </button>
+      <button onClick="changeYearFromButton(-1);"> Previous Year </button>
       <span id="year_display"></span>
-      <button onClick="changeYearFromButton(+1);"> Move to Next Year </button>
+      <button onClick="changeYearFromButton(+1);"> Next Year </button>
   </span>
   <br/> <br/>
   <div id="map_canvas"></div>
@@ -656,65 +641,4 @@ function debug(msg) {
 
 </body>
 </html>
-
-
-<?php
-
-function dbConnect() {
-    $dbname = "./newspaper.db";
-    try {
-        $db = new PDO("sqlite:" . $dbname);
-        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    } catch (PDOException $e) {
-        $e->getMessage();
-        exit();
-    }
-    return $db;
-}
-
-function getStatsByPub() {
-    try {
-        $db = dbConnect();
-        $db->beginTransaction();
-
-        $query = 'select pub, year, mGood, mTotal, location.city,
-                  longitude as lng, latitude as lat
-                  from pub_by_year, location
-                  where pub_by_year.city=location.city';
-        $result = $db->query($query)->fetchAll();
-
-        $db->commit();
-        $db = null;
-
-        echo json_encode($result);
-    }
-    catch (PDOException $e) {
-        $e->getMessage();
-        exit();
-    }
-}
-
-function getStatsByCity() {
-    try {
-        $db = dbConnect();
-        $db->beginTransaction();
-
-        $query = 'select city_by_year.city, year, mGood, mTotal,
-                  longitude as lng, latitude as lat
-                  from city_by_year, location
-                  where city_by_year.city=location.city';
-        $result = $db->query($query)->fetchAll();
-
-        $db->commit();
-        $db = null;
-
-        echo json_encode($result);
-    }
-    catch (PDOException $e) {
-        $e->getMessage();
-        exit();
-    }
-}
-
-?>
 
