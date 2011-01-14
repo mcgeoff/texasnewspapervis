@@ -7,9 +7,13 @@
 
 <link rel="stylesheet" type="text/css" href="style.css" />
 
+<!-- Dependencies --> 
 <script type="text/javascript" src="./protovis-r3.2.js"></script>
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
-<script type="text/javascript" src="http://yui.yahooapis.com/3.2.0/build/yui/yui-min.js"></script>
+<script src="http://yui.yahooapis.com/2.8.2r1/build/yahoo-dom-event/yahoo-dom-event.js"></script>
+<script src="http://yui.yahooapis.com/2.8.2r1/build/dragdrop/dragdrop-min.js"></script>
+<script src="http://yui.yahooapis.com/2.8.2r1/build/slider/slider-min.js"></script>
+
 
 <script type="text/javascript">
 
@@ -20,35 +24,28 @@
 var statsByPub  = <?php getStatsByPub(); ?>;
 var statsByCity = <?php getStatsByCity(); ?>;
 var currCity = "Abilene";  // default value
-var currYear = "1950";    // default value
 
-var minYear = 1829;
-var maxYear = 2008;
+var minYear = 1829;  // static configuration
+var maxYear = 2008;  // all the years we have data for
 
 var pubTrendByYear = getTrendByYear(statsByPub);
 
 var map;
+
 var markers = [];
 
-// Create a YUI instance and request the slider module and its dependencies
-var xSlider = null;
-YUI().use("slider", function (Y) {
-    // horizontal Slider
-    xSlider = new Y.Slider({
-        min : minYear,
-        max : maxYear,
-        value : parseInt(currYear),
-        length : '400px' });
-
-    xSlider.after( "valueChange", updateCurrYear);
-    xSlider.render('#horiz_slider'); 
-});
+// variables for dual slider
+var dualSlider;
+var rangeMinYear = 1829;
+var rangeMaxYear = 2008;
 
 /*
  * js method section
  */
 
 function initialize() {
+    initDualSlider();
+
     var myLatlng = new google.maps.LatLng(32.20, -99.00);
     var myOptions = {
       zoom: 6,
@@ -62,9 +59,46 @@ function initialize() {
     addLeftColumnTable();
     addPolygon(map);
 
-    updateCurrYear();
     updateCurrCity(currCity);
 }
+
+function initDualSlider() {
+    // Values assigned during instantiation
+    var range = maxYear - minYear;
+    var tickSize = 1;
+    var initVals = [ 0, range ];
+
+    // During instantiation, the min thumb will be moved to offset 60
+    // and the max thumb to offset 130.
+    dualSlider = YAHOO.widget.Slider.getHorizDualSlider( "sliderbg","minthumb","maxthumb", range, tickSize, initVals);
+
+    // change display
+    document.getElementById("minDisp").innerHTML = rangeMinYear;
+    document.getElementById("maxDisp").innerHTML = rangeMaxYear;
+
+    dualSlider.subscribe("slideEnd", function() {
+        rangeMinYear = dualSlider.minVal + minYear;
+        rangeMaxYear = dualSlider.maxVal + minYear;
+
+        // change display
+        document.getElementById("minDisp").innerHTML = rangeMinYear;
+        document.getElementById("maxDisp").innerHTML = rangeMaxYear;
+
+        // update markers
+        showMarkers();
+    });
+}
+
+function yearInRange(year) {
+    if (parseInt(year) >= parseInt(rangeMinYear) &&
+        parseInt(year) <= parseInt(rangeMaxYear)) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 
 function addPolygon(map) {
     var c = [
@@ -443,32 +477,6 @@ function addLeftColumnTable() {
     content.appendChild(tbl);
 }
 
-function updateCurrYear(e) {
-    if (e != null) {
-        currYear = e.newVal;
-    }
-
-    onCurrYear();
-}
-
-function changeYearFromButton(step) {
-    currYear = "" + (parseInt(currYear) + step);
-
-    onCurrYear();
-}
-
-function onCurrYear() {
-    // step 1 keep only markers with publication in that year
-    showMarkers();
-
-    // step 2 keep YUI slider up to date
-    xSlider.setValue(currYear, false, true, false);
-
-    // step 3 update year display
-    var year_disp = document.getElementById("year_display");
-    year_disp.innerHTML = currYear;
-}
-
 function updateCurrCity(city) {
     // record newly updated city
     currCity = city;
@@ -516,7 +524,7 @@ function updateCurrCity(city) {
     var stats = null;
     for (var i = 0; i < statsByCity.length; i++) {
         if (statsByCity[i]["city"] == currCity &&
-            statsByCity[i]["year"] == currYear) {
+            yearInRange(statsByCity[i]["year"])) {
             stats = statsByCity[i];
         }
     }
@@ -556,7 +564,7 @@ function addMarkerListener(marker) {
 function showMarkers() {
     if (markers) {
         for (i in markers) {
-            if (currYear == markers[i].year) {
+            if (yearInRange(markers[i].year)) {
                 markers[i].setMap(map);
             }
             else {
@@ -628,17 +636,23 @@ function debug(msg) {
 
   <!-- canvas for map -->
   <div>
-  <span id="yahoo-com" class="yui3-skin-sam  yui-skin-sam">
-      <span> 1829 <span id="horiz_slider"></span> 2008 </span>
-      <br/>
-      <button onClick="changeYearFromButton(-1);"> Previous Year </button>
-      <span id="year_display"></span>
-      <button onClick="changeYearFromButton(+1);"> Next Year </button>
+  <!-- dual slider to choose a range of year -->
+  <span>
+    <div id="sliderbg" class="yui-h-slider">
+      <div id="minthumb"><img src="http://yui.yahooapis.com/2.8.2r1/build/slider/assets/right-thumb.png"/></div>
+      <div id="maxthumb"><img src="http://yui.yahooapis.com/2.8.2r1/build/slider/assets/left-thumb.png"/></div>
+    </div>
+    <div>
+      <p>
+        From the year <span id="minDisp"></span>
+        to the year <span id="maxDisp"></span>.
+      </p>
+    </div>
   </span>
+
   <br/> <br/>
   <div id="map_canvas"></div>
   </div>
 
 </body>
 </html>
-
