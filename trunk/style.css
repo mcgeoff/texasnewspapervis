@@ -15,3 +15,23 @@
     float: right;
 }
 
+
+#sliderbg {
+    position: relative;
+    height: 20px;
+    width: 180px;
+    left: 20;
+    background: url(http://yui.yahooapis.com/2.8.2r1/build/slider/assets/bg-fader.gif) repeat-x;
+}
+#minthumb {
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    left: 0;
+}
+#maxthumb {
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    left: 0;
+}
