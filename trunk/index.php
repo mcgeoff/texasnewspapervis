@@ -46,14 +46,35 @@ var rangeMaxYear = 2008;
 function initialize() {
     initDualSlider();
 
+    var styles = [
+    {
+    featureType: "landscape.natural",
+    elementType: "all",
+    stylers: [
+      { visibility: "on" },
+      { hue: "#88ff00" },
+      { lightness: -20 },
+      { gamma: 0.58 }
+    ]
+    }
+    ];
+    var styledMapOptions = { name: 'Natural' };
+    var myMapType = new google.maps.StyledMapType(styles, styledMapOptions);
+
     var myLatlng = new google.maps.LatLng(32.20, -99.00);
     var myOptions = {
       zoom: 6,
       center: myLatlng,
-      mapTypeId: google.maps.MapTypeId.ROADMAP
+      mapTypeControlOptions: {
+          mapTypeIds: [google.maps.MapTypeId.ROADMAP, 'mine'],
+      },
     };
 
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+
+    map.mapTypes.set('mine', myMapType);
+    map.setMapTypeId('mine');
+
     addMarkers(statsByCity);
 
     addLeftColumnTable();
@@ -68,8 +89,6 @@ function initDualSlider() {
     var tickSize = 1;
     var initVals = [ 0, range ];
 
-    // During instantiation, the min thumb will be moved to offset 60
-    // and the max thumb to offset 130.
     dualSlider = YAHOO.widget.Slider.getHorizDualSlider( "sliderbg","minthumb","maxthumb", range, tickSize, initVals);
 
     // change display
@@ -90,13 +109,12 @@ function initDualSlider() {
 }
 
 function yearInRange(year) {
+    var inRange = false;
     if (parseInt(year) >= parseInt(rangeMinYear) &&
         parseInt(year) <= parseInt(rangeMaxYear)) {
-        return true;
+        inRange = true;
     }
-    else {
-        return false;
-    }
+    return inRange;
 }
 
 
@@ -481,7 +499,7 @@ function updateCurrCity(city) {
     // record newly updated city
     currCity = city;
 
-    // step 1 update info table in left column
+    // update info table in left column
     var tbl = document.getElementById("infoTable");
     while (tbl.rows.length>0) {
         tbl.deleteRow(0);
@@ -519,9 +537,10 @@ function updateCurrCity(city) {
         cell1.width = "50%";
     }
 
-    // step 2 update city info in right column
+    // update city info in right column
     var city_info = document.getElementById("city_info");
     var stats = null;
+    // TODO the choice of year is not quite meaningful right now
     for (var i = 0; i < statsByCity.length; i++) {
         if (statsByCity[i]["city"] == currCity &&
             yearInRange(statsByCity[i]["year"])) {
@@ -529,7 +548,7 @@ function updateCurrCity(city) {
         }
     }
     if (stats != null) {
-        city_info.innerHTML = "Year: " + currYear + "<br/>" +
+        city_info.innerHTML = "Year: " + stats["year"] + "<br/>" +
                               "City: " + currCity + "<br/>" +
                               "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
                               "Total Characters Scanned: " + stats["mTotal"] + "<br/>";
@@ -634,24 +653,19 @@ function debug(msg) {
     <div id="city_info"></div>
   </div>
 
-  <!-- canvas for map -->
-  <div>
-  <!-- dual slider to choose a range of year -->
-  <span>
+  <!-- center column -->
+  <div id="centercolumn">
+    <!-- dual slider to choose a range of year -->
     <div id="sliderbg" class="yui-h-slider">
       <div id="minthumb"><img src="http://yui.yahooapis.com/2.8.2r1/build/slider/assets/right-thumb.png"/></div>
       <div id="maxthumb"><img src="http://yui.yahooapis.com/2.8.2r1/build/slider/assets/left-thumb.png"/></div>
     </div>
+    <!-- year display -->
     <div>
-      <p>
-        From the year <span id="minDisp"></span>
-        to the year <span id="maxDisp"></span>.
-      </p>
+      <p>From <span id="minDisp"></span> To <span id="maxDisp"></span></p>
     </div>
-  </span>
-
-  <br/> <br/>
-  <div id="map_canvas"></div>
+    <!-- canvas for map -->
+    <div id="map_canvas"></div>
   </div>
 
 </body>
