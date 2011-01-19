@@ -37,22 +37,44 @@ function getStatsByPub() {
 
 function getStatsByCity() {
     try {
-        $db = dbConnect();
-        $db->beginTransaction();
+        $db = dbconnect();
+        $db->begintransaction();
 
-        $query = 'select city_by_year.city, year, mGood, mTotal,
+        $query = 'select city_by_year.city, year, mgood, mtotal,
                   longitude as lng, latitude as lat
                   from city_by_year, location
                   where city_by_year.city=location.city';
-        $result = $db->query($query)->fetchAll();
+        $result = $db->query($query)->fetchall();
 
         $db->commit();
         $db = null;
 
         echo json_encode($result);
     }
-    catch (PDOException $e) {
-        $e->getMessage();
+    catch (pdoexception $e) {
+        $e->getmessage();
+        exit();
+    }
+}
+
+function getStatsByYear() {
+    try {
+        $db = dbconnect();
+        $db->begintransaction();
+
+        $query = 'select strftime("%Y", dateTime) as year, sum(mTotal-mBad-mUnknown) as good, sum(mTotal) as total
+                  from newspaper_count
+                  group by strftime("%Y", dateTime)
+                  order by strftime("%Y", dateTime) asc';
+        $result = $db->query($query)->fetchall();
+
+        $db->commit();
+        $db = null;
+
+        echo json_encode($result);
+    }
+    catch (pdoexception $e) {
+        $e->getmessage();
         exit();
     }
 }
