@@ -655,6 +655,15 @@ function debug(msg) {
 
   <!-- center column -->
   <div id="centercolumn">
+    <!-- overall trend -->
+    <div>
+      <span style="display: inline-block; ">
+        <svg width="180" height="40" fill="none"><g>
+          <path stroke-width="1" stroke="blue" d="M0,20 L0,20 L10,21 L20,10 L30,10 L120,20 L150,15 L180,0"></path>
+        </g></svg>
+      </span>
+    </div>
+    <br/><br/>
     <!-- dual slider to choose a range of year -->
     <div id="sliderbg" class="yui-h-slider">
       <div id="minthumb"><img src="http://yui.yahooapis.com/2.8.2r1/build/slider/assets/right-thumb.png"/></div>
