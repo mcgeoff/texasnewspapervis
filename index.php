@@ -9,71 +9,91 @@
 
 <!-- Dependencies --> 
 <script type="text/javascript" src="./protovis-r3.2.js"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
-<script src="http://yui.yahooapis.com/2.8.2r1/build/yahoo-dom-event/yahoo-dom-event.js"></script>
-<script src="http://yui.yahooapis.com/2.8.2r1/build/dragdrop/dragdrop-min.js"></script>
-<script src="http://yui.yahooapis.com/2.8.2r1/build/slider/slider-min.js"></script>
-
 
 <script type="text/javascript">
-
 /*
  * global data section
  */
 
 var statsByPub  = <?php getStatsByPub(); ?>;
 var statsByCity = <?php getStatsByCity(); ?>;
-var currCity = "Abilene";  // default value
+var statsByYear = <?php getStatsByYear(); ?>;
 
+var currCity = "Abilene";  // default value
 var minYear = 1829;  // static configuration
 var maxYear = 2008;  // all the years we have data for
 
 var pubTrendByYear = getTrendByYear(statsByPub);
 
+// map widget
 var map;
-
 var markers = [];
 
-// variables for dual slider
-var dualSlider;
-var rangeMinYear = 1829;
-var rangeMaxYear = 2008;
+// timeline control widget
+var timeline;
+var rangeMinYear = minYear;
+var rangeMaxYear = maxYear;
+
 
 /*
  * js method section
  */
 
-function initialize() {
-    initDualSlider();
+google.load('visualization', '1', {'packages':['annotatedtimeline']});
+google.setOnLoadCallback(initTimeline);
+function initTimeline() {
+    var data = new google.visualization.DataTable();
+    data.addColumn('date', 'Date');
+    data.addColumn('number', 'Total Words Scanned');
+    data.addColumn('string', 'title1');
+    data.addColumn('string', 'text1');
+    data.addColumn('number', 'Correct Percentage');
+    data.addColumn('string', 'title2');
+    data.addColumn('string', 'text2');
 
-    var styles = [
-    {
-    featureType: "landscape.natural",
-    elementType: "all",
-    stylers: [
-      { visibility: "on" },
-      { hue: "#88ff00" },
-      { lightness: -20 },
-      { gamma: 0.58 }
-    ]
+    data.addRows(statsByYear.length);
+    for (var i = 0; i < statsByYear.length; i++) {
+        var year = parseInt(statsByYear[i]["year"]);
+        var good = parseInt(statsByYear[i]["good"]);
+        var total = parseInt(statsByYear[i]["total"]);
+        var totalM  = total / 100000;
+        var percent = good / total * 100;
+        data.setValue(i, 0, new Date(year, 1, 1));
+        data.setValue(i, 1, totalM);
+        data.setValue(i, 4, percent);
     }
-    ];
-    var styledMapOptions = { name: 'Natural' };
-    var myMapType = new google.maps.StyledMapType(styles, styledMapOptions);
 
+    timeline = new google.visualization.AnnotatedTimeLine(
+        document.getElementById('timeline_vis'));
+    timeline.draw(data, {'displayAnnotations': true});
+
+    google.visualization.events.addListener(
+        timeline,
+        'rangechange',
+        onRangechange);
+}
+
+function onRangechange() {
+    rangeMinYear = timeline.getVisibleChartRange().start.getFullYear();
+    rangeMaxYear = timeline.getVisibleChartRange().end.getFullYear();
+
+    document.getElementById('yearFrom').innerHTML = rangeMinYear;
+    document.getElementById('yearTo').innerHTML   = rangeMaxYear;
+
+    showMarkers();
+}
+
+function initMap() {
     var myLatlng = new google.maps.LatLng(32.20, -99.00);
     var myOptions = {
       zoom: 6,
       center: myLatlng,
-      mapTypeControlOptions: {
-          mapTypeIds: [google.maps.MapTypeId.ROADMAP, 'mine'],
-      },
+      mapTypeId: google.maps.MapTypeId.ROADMAP,
     };
 
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
-
-    map.mapTypes.set('mine', myMapType);
-    map.setMapTypeId('mine');
 
     addMarkers(statsByCity);
 
@@ -81,31 +101,6 @@ function initialize() {
     addPolygon(map);
 
     updateCurrCity(currCity);
-}
-
-function initDualSlider() {
-    // Values assigned during instantiation
-    var range = maxYear - minYear;
-    var tickSize = 1;
-    var initVals = [ 0, range ];
-
-    dualSlider = YAHOO.widget.Slider.getHorizDualSlider( "sliderbg","minthumb","maxthumb", range, tickSize, initVals);
-
-    // change display
-    document.getElementById("minDisp").innerHTML = rangeMinYear;
-    document.getElementById("maxDisp").innerHTML = rangeMaxYear;
-
-    dualSlider.subscribe("slideEnd", function() {
-        rangeMinYear = dualSlider.minVal + minYear;
-        rangeMaxYear = dualSlider.maxVal + minYear;
-
-        // change display
-        document.getElementById("minDisp").innerHTML = rangeMinYear;
-        document.getElementById("maxDisp").innerHTML = rangeMaxYear;
-
-        // update markers
-        showMarkers();
-    });
 }
 
 function yearInRange(year) {
@@ -117,6 +112,144 @@ function yearInRange(year) {
     return inRange;
 }
 
+
+function addLeftColumnTable() {
+    var content = document.getElementById("leftcolumn");
+    var tbl = document.createElement("table");
+    tbl.id = "infoTable";
+    content.appendChild(tbl);
+}
+
+function updateCurrCity(city) {
+    // record newly updated city
+    currCity = city;
+
+    // update info table in left column
+    var tbl = document.getElementById("infoTable");
+    while (tbl.rows.length>0) {
+        tbl.deleteRow(0);
+    }
+
+    for (var k in pubTrendByYear) {
+        if (pubTrendByYear[k]["city"] != currCity) {
+            continue;
+        }
+        var tmpRow = tbl.insertRow();
+
+        var cell0 = tmpRow.insertCell(0)
+        cell0.innerHTML = pubTrendByYear[k]["pub"];
+        cell0.width = "50%";
+
+        var a = pubTrendByYear[k]["goodPercent"];
+        var part1 = 
+            '<span style="display: inline-block; ">' +
+            '<svg width="300" height="20" fill="none">' +
+            '<g>';
+        var part2 = '<path stroke-width="1" stroke="blue" d="M0,20 ';
+        for (var i = 0; i < a.length; i++) {
+            if (isNaN(a[i])) {
+                a[i] = 0;
+            }
+            part2 = part2 + 'L' + i + ',' + (20 - 20 * a[i]) + ' ';
+        }
+        part2 = part2 + '"/>';
+        var part3 =
+            '</g>' +
+            '</svg>' +
+            '</span>';
+        var cell1 = tmpRow.insertCell(1);
+        cell1.innerHTML = part1 + part2 + part3;
+        cell1.width = "50%";
+    }
+
+    // update city info in right column
+    var city_info = document.getElementById("city_info");
+    var stats = null;
+    // TODO the choice of year is not quite meaningful right now
+    for (var i = 0; i < statsByCity.length; i++) {
+        if (statsByCity[i]["city"] == currCity &&
+            yearInRange(statsByCity[i]["year"])) {
+            stats = statsByCity[i];
+        }
+    }
+    if (stats != null) {
+        city_info.innerHTML = "Year: " + stats["year"] + "<br/>" +
+                              "City: " + currCity + "<br/>" +
+                              "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
+                              "Total Characters Scanned: " + stats["mTotal"] + "<br/>";
+    }
+}
+
+function addMarkers(markerLoc) {
+    for (i in markerLoc) {
+        var loc = new google.maps.LatLng(
+            parseFloat(markerLoc[i]["lat"]),
+            parseFloat(markerLoc[i]["lng"]));
+
+        marker = new google.maps.Marker({
+            position: loc,
+            map: map,
+            city: markerLoc[i]["city"],
+            year: markerLoc[i]["year"],
+        });
+
+        addMarkerListener(marker);
+
+        markers.push(marker);
+    }
+}
+
+function addMarkerListener(marker) {
+    google.maps.event.addListener(marker, "click", function() {
+        updateCurrCity(marker.city);
+    });
+}
+
+function showMarkers() {
+    if (markers) {
+        for (i in markers) {
+            if (yearInRange(markers[i].year)) {
+                markers[i].setMap(map);
+            }
+            else {
+                markers[i].setMap(null);
+            }
+        }
+    }
+}
+
+/**
+ *  convert data from
+ *      pub, city, year, ...
+ *  to
+ *      pub, city, trend[year], ...
+ */
+function getTrendByYear(statsByPub) {
+    var result = {};
+
+    for (var i = 0; i < statsByPub.length; i++) {
+        var pubName = statsByPub[i]["pub"];
+        if (result[pubName] == null) {
+            result[pubName] = {};
+            result[pubName]["pub"] = statsByPub[i]["pub"];
+            result[pubName]["city"] = statsByPub[i]["city"];
+            result[pubName]["lat"] = statsByPub[i]["lat"];
+            result[pubName]["lng"] = statsByPub[i]["lng"];
+            result[pubName]["goodPercent"] = new Array();
+
+            result[pubName]["goodPercent"][maxYear-minYear] = null;  // force to length
+        }
+
+        var yearOffset = statsByPub[i]["year"] - minYear;
+
+        // record mGood / mTotal to the year
+        result[pubName]["goodPercent"][yearOffset] =
+            parseFloat(statsByPub[i]["mGood"]) /
+            parseFloat(statsByPub[i]["mTotal"]);
+    }
+
+    return result;
+}
 
 function addPolygon(map) {
     var c = [
@@ -484,159 +617,16 @@ function addPolygon(map) {
         fillColor: "#000000",
         fillOpacity: 0,
     });
-
     t.setMap(map);
 }
 
-function addLeftColumnTable() {
-    var content = document.getElementById("leftcolumn");
-    var tbl = document.createElement("table");
-    tbl.id = "infoTable";
-    content.appendChild(tbl);
-}
 
-function updateCurrCity(city) {
-    // record newly updated city
-    currCity = city;
-
-    // update info table in left column
-    var tbl = document.getElementById("infoTable");
-    while (tbl.rows.length>0) {
-        tbl.deleteRow(0);
-    }
-
-    for (var k in pubTrendByYear) {
-        if (pubTrendByYear[k]["city"] != currCity) {
-            continue;
-        }
-        var tmpRow = tbl.insertRow();
-
-        var cell0 = tmpRow.insertCell(0)
-        cell0.innerHTML = pubTrendByYear[k]["pub"];
-        cell0.width = "50%";
-
-        var a = pubTrendByYear[k]["goodPercent"];
-        var part1 = 
-            '<span style="display: inline-block; ">' +
-            '<svg width="300" height="20" fill="none">' +
-            '<g>';
-        var part2 = '<path stroke-width="1" stroke="blue" d="M0,20 ';
-        for (var i = 0; i < a.length; i++) {
-            if (isNaN(a[i])) {
-                a[i] = 0;
-            }
-            part2 = part2 + 'L' + i + ',' + (20 - 20 * a[i]) + ' ';
-        }
-        part2 = part2 + '"/>';
-        var part3 =
-            '</g>' +
-            '</svg>' +
-            '</span>';
-        var cell1 = tmpRow.insertCell(1);
-        cell1.innerHTML = part1 + part2 + part3;
-        cell1.width = "50%";
-    }
-
-    // update city info in right column
-    var city_info = document.getElementById("city_info");
-    var stats = null;
-    // TODO the choice of year is not quite meaningful right now
-    for (var i = 0; i < statsByCity.length; i++) {
-        if (statsByCity[i]["city"] == currCity &&
-            yearInRange(statsByCity[i]["year"])) {
-            stats = statsByCity[i];
-        }
-    }
-    if (stats != null) {
-        city_info.innerHTML = "Year: " + stats["year"] + "<br/>" +
-                              "City: " + currCity + "<br/>" +
-                              "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
-                              "Total Characters Scanned: " + stats["mTotal"] + "<br/>";
-    }
-}
-
-function addMarkers(markerLoc) {
-    for (i in markerLoc) {
-        var loc = new google.maps.LatLng(
-            parseFloat(markerLoc[i]["lat"]),
-            parseFloat(markerLoc[i]["lng"]));
-
-        marker = new google.maps.Marker({
-            position: loc,
-            map: map,
-            city: markerLoc[i]["city"],
-            year: markerLoc[i]["year"],
-        });
-
-        addMarkerListener(marker);
-
-        markers.push(marker);
-    }
-}
-
-function addMarkerListener(marker) {
-    google.maps.event.addListener(marker, "click", function() {
-        updateCurrCity(marker.city);
-    });
-}
-
-function showMarkers() {
-    if (markers) {
-        for (i in markers) {
-            if (yearInRange(markers[i].year)) {
-                markers[i].setMap(map);
-            }
-            else {
-                markers[i].setMap(null);
-            }
-        }
-    }
-}
-
-/**
- *  convert data from
- *      pub, city, year, ...
- *  to
- *      pub, city, trend[year], ...
- */
-function getTrendByYear(statsByPub) {
-    var result = {};
-
-    for (var i = 0; i < statsByPub.length; i++) {
-        var pubName = statsByPub[i]["pub"];
-        if (result[pubName] == null) {
-            result[pubName] = {};
-            result[pubName]["pub"] = statsByPub[i]["pub"];
-            result[pubName]["city"] = statsByPub[i]["city"];
-            result[pubName]["lat"] = statsByPub[i]["lat"];
-            result[pubName]["lng"] = statsByPub[i]["lng"];
-            result[pubName]["goodPercent"] = new Array();
-
-            result[pubName]["goodPercent"][maxYear-minYear] = null;  // force to length
-        }
-
-        var yearOffset = statsByPub[i]["year"] - minYear;
-
-        // record mGood / mTotal to the year
-        result[pubName]["goodPercent"][yearOffset] =
-            parseFloat(statsByPub[i]["mGood"]) /
-            parseFloat(statsByPub[i]["mTotal"]);
-    }
-
-    return result;
-}
-
-
-function debug(msg) {
-    document.getElementById('debug').appendChild(
-        document.createTextNode(msg.toString()));
-}
 
 </script>
 
 </head>
 
-<body onload="initialize()">
+<body onload="initMap()">
 
   <!-- Title Bar -->
   <h1> Texas Newspaper Collection </h1>
@@ -648,34 +638,30 @@ function debug(msg) {
   <div id="rightcolumn">
     <div><a href="map_count.html">Map of Count By City</a></div>
     <div><a href="city_year.html">Plots of Count By City</a></div>
-    <div id="debug"></div>
     <br/> <br/>
     <div id="city_info"></div>
   </div>
 
   <!-- center column -->
   <div id="centercolumn">
+
+<!-- timeline -->
+  <div>
     <!-- overall trend -->
     <div>
-      <span style="display: inline-block; ">
-        <svg width="180" height="40" fill="none"><g>
-          <path stroke-width="1" stroke="blue" d="M0,20 L0,20 L10,21 L20,10 L30,10 L120,20 L150,15 L180,0"></path>
-        </g></svg>
-      </span>
+      <!-- timeline control -->
+      <div id="timeline_vis" style="width: 500px; height: 200px;"> </div>
+      <!-- year display -->
+      <div>
+        <p>From <span id="yearFrom">1829</span> To <span id="yearTo">2008</span></p>
+      </div>
     </div>
-    <br/><br/>
-    <!-- dual slider to choose a range of year -->
-    <div id="sliderbg" class="yui-h-slider">
-      <div id="minthumb"><img src="http://yui.yahooapis.com/2.8.2r1/build/slider/assets/right-thumb.png"/></div>
-      <div id="maxthumb"><img src="http://yui.yahooapis.com/2.8.2r1/build/slider/assets/left-thumb.png"/></div>
-    </div>
-    <!-- year display -->
-    <div>
-      <p>From <span id="minDisp"></span> To <span id="maxDisp"></span></p>
-    </div>
+  </div>
+
     <!-- canvas for map -->
     <div id="map_canvas"></div>
   </div>
 
 </body>
 </html>
+

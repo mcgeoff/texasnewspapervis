@@ -39,3 +39,11 @@ select city,
 from newspaper_count
 group by city, strftime("%Y", dateTime);
 */
+
+/*
+-- stats by year
+select strftime("%Y", dateTime) as year, sum(mTotal) as total, sum(mTotal-mUnknown-mBad) as good
+from newspaper_count
+group by strftime("%Y", dateTime);
+*/
+
