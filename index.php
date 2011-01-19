@@ -36,20 +36,20 @@ var timeline;
 var rangeMinYear = minYear;
 var rangeMaxYear = maxYear;
 
+google.load('visualization', '1', {'packages':['annotatedtimeline', 'imagesparkline']});
+google.setOnLoadCallback(initTimeline);
 
 /*
  * js method section
  */
 
-google.load('visualization', '1', {'packages':['annotatedtimeline']});
-google.setOnLoadCallback(initTimeline);
 function initTimeline() {
     var data = new google.visualization.DataTable();
     data.addColumn('date', 'Date');
-    data.addColumn('number', 'Total Words Scanned');
+    data.addColumn('number', 'Total');
     data.addColumn('string', 'title1');
     data.addColumn('string', 'text1');
-    data.addColumn('number', 'Correct Percentage');
+    data.addColumn('number', 'Correct');
     data.addColumn('string', 'title2');
     data.addColumn('string', 'text2');
 
@@ -58,11 +58,9 @@ function initTimeline() {
         var year = parseInt(statsByYear[i]["year"]);
         var good = parseInt(statsByYear[i]["good"]);
         var total = parseInt(statsByYear[i]["total"]);
-        var totalM  = total / 100000;
-        var percent = good / total * 100;
         data.setValue(i, 0, new Date(year, 1, 1));
-        data.setValue(i, 1, totalM);
-        data.setValue(i, 4, percent);
+        data.setValue(i, 1, total);
+        data.setValue(i, 4, good);
     }
 
     timeline = new google.visualization.AnnotatedTimeLine(
@@ -97,7 +95,6 @@ function initMap() {
 
     addMarkers(statsByCity);
 
-    addLeftColumnTable();
     addPolygon(map);
 
     updateCurrCity(currCity);
@@ -112,55 +109,37 @@ function yearInRange(year) {
     return inRange;
 }
 
-
-function addLeftColumnTable() {
-    var content = document.getElementById("leftcolumn");
-    var tbl = document.createElement("table");
-    tbl.id = "infoTable";
-    content.appendChild(tbl);
-}
-
 function updateCurrCity(city) {
     // record newly updated city
     currCity = city;
 
-    // update info table in left column
-    var tbl = document.getElementById("infoTable");
-    while (tbl.rows.length>0) {
-        tbl.deleteRow(0);
-    }
+    // update chart table for publications
+    var div_pub_chart = document.getElementById('pub_chart');
+    var data = new google.visualization.DataTable();
 
+    var numColumn = 0;
     for (var k in pubTrendByYear) {
-        if (pubTrendByYear[k]["city"] != currCity) {
+        if (pubTrendByYear[k]['city'] != currCity) {
             continue;
         }
-        var tmpRow = tbl.insertRow();
 
-        var cell0 = tmpRow.insertCell(0)
-        cell0.innerHTML = pubTrendByYear[k]["pub"];
-        cell0.width = "50%";
-
+        var pubTitle = pubTrendByYear[k]["pub"];
         var a = pubTrendByYear[k]["goodPercent"];
-        var part1 = 
-            '<span style="display: inline-block; ">' +
-            '<svg width="300" height="20" fill="none">' +
-            '<g>';
-        var part2 = '<path stroke-width="1" stroke="blue" d="M0,20 ';
-        for (var i = 0; i < a.length; i++) {
+
+        data.addColumn("number", pubTitle);
+        var len = maxYear - minYear + 1;
+        data.addRows(len);
+        for (var i = 0; i < len; i++) {
             if (isNaN(a[i])) {
                 a[i] = 0;
             }
-            part2 = part2 + 'L' + i + ',' + (20 - 20 * a[i]) + ' ';
+            data.setValue(i, numColumn, a[i]);
         }
-        part2 = part2 + '"/>';
-        var part3 =
-            '</g>' +
-            '</svg>' +
-            '</span>';
-        var cell1 = tmpRow.insertCell(1);
-        cell1.innerHTML = part1 + part2 + part3;
-        cell1.width = "50%";
+        numColumn = numColumn + 1;
     }
+    var chart = new google.visualization.ImageSparkLine(div_pub_chart);
+    chart.draw(data, {width: 500, height: 30 * numColumn, showAxisLines: true,
+                      showValueLabels: false, labelPosition: 'left'});
 
     // update city info in right column
     var city_info = document.getElementById("city_info");
@@ -632,7 +611,9 @@ function addPolygon(map) {
   <h1> Texas Newspaper Collection </h1>
 
   <!-- left column -->
-  <div id="leftcolumn"></div>
+  <div id="leftcolumn">
+    <div id="pub_chart"></div>
+  </div>
 
   <!-- right column -->
   <div id="rightcolumn">
