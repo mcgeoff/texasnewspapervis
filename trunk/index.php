@@ -37,11 +37,16 @@ var rangeMinYear = minYear;
 var rangeMaxYear = maxYear;
 
 google.load('visualization', '1', {'packages':['annotatedtimeline', 'imagesparkline']});
-google.setOnLoadCallback(initTimeline);
+google.setOnLoadCallback(initialize);
 
 /*
  * js method section
  */
+
+function initialize() {
+    initMap();
+    initTimeline();
+}
 
 function initTimeline() {
     var data = new google.visualization.DataTable();
@@ -73,16 +78,6 @@ function initTimeline() {
         onRangechange);
 }
 
-function onRangechange() {
-    rangeMinYear = timeline.getVisibleChartRange().start.getFullYear();
-    rangeMaxYear = timeline.getVisibleChartRange().end.getFullYear();
-
-    document.getElementById('yearFrom').innerHTML = rangeMinYear;
-    document.getElementById('yearTo').innerHTML   = rangeMaxYear;
-
-    showMarkers();
-}
-
 function initMap() {
     var myLatlng = new google.maps.LatLng(32.20, -99.00);
     var myOptions = {
@@ -98,6 +93,16 @@ function initMap() {
     addPolygon(map);
 
     updateCurrCity(currCity);
+}
+
+function onRangechange() {
+    rangeMinYear = timeline.getVisibleChartRange().start.getFullYear();
+    rangeMaxYear = timeline.getVisibleChartRange().end.getFullYear();
+
+    document.getElementById('yearFrom').innerHTML = rangeMinYear;
+    document.getElementById('yearTo').innerHTML   = rangeMaxYear;
+
+    showMarkers();
 }
 
 function yearInRange(year) {
@@ -117,6 +122,9 @@ function updateCurrCity(city) {
     var div_pub_chart = document.getElementById('pub_chart');
     var data = new google.visualization.DataTable();
 
+    var numYears = maxYear - minYear + 1;
+    data.addRows(numYears);
+
     var numColumn = 0;
     for (var k in pubTrendByYear) {
         if (pubTrendByYear[k]['city'] != currCity) {
@@ -127,9 +135,7 @@ function updateCurrCity(city) {
         var a = pubTrendByYear[k]["goodPercent"];
 
         data.addColumn("number", pubTitle);
-        var len = maxYear - minYear + 1;
-        data.addRows(len);
-        for (var i = 0; i < len; i++) {
+        for (var i = 0; i < numYears; i++) {
             if (isNaN(a[i])) {
                 a[i] = 0;
             }
@@ -137,9 +143,9 @@ function updateCurrCity(city) {
         }
         numColumn = numColumn + 1;
     }
-    var chart = new google.visualization.ImageSparkLine(div_pub_chart);
-    chart.draw(data, {width: 500, height: 30 * numColumn, showAxisLines: true,
-                      showValueLabels: false, labelPosition: 'left'});
+    var pub_chart = new google.visualization.ImageSparkLine(div_pub_chart);
+    pub_chart.draw(data, {heigth: numColumn * 30, showAxisLines: true,
+                      showValueLabels: false, labelPosition: 'right', fill: true});
 
     // update city info in right column
     var city_info = document.getElementById("city_info");
@@ -185,14 +191,16 @@ function addMarkerListener(marker) {
 }
 
 function showMarkers() {
-    if (markers) {
-        for (i in markers) {
-            if (yearInRange(markers[i].year)) {
-                markers[i].setMap(map);
-            }
-            else {
-                markers[i].setMap(null);
-            }
+    if (!markers) {
+        return;
+    }
+
+    for (i in markers) {
+        if (yearInRange(markers[i].year)) {
+            markers[i].setMap(map);
+        }
+        else {
+            markers[i].setMap(null);
         }
     }
 }
@@ -590,7 +598,7 @@ function addPolygon(map) {
 
     t = new google.maps.Polygon({
         paths: c,
-        strokeColor: "#0000CC",
+        strokeColor: "#aaaaaa",
         strokeOpacity: 0.6,
         strokeWeight: 4,
         fillColor: "#000000",
@@ -599,48 +607,42 @@ function addPolygon(map) {
     t.setMap(map);
 }
 
-
-
 </script>
 
 </head>
 
-<body onload="initMap()">
+<body>
 
   <!-- Title Bar -->
-  <h1> Texas Newspaper Collection </h1>
-
-  <!-- left column -->
-  <div id="leftcolumn">
-    <div id="pub_chart"></div>
-  </div>
-
-  <!-- right column -->
-  <div id="rightcolumn">
-    <div><a href="map_count.html">Map of Count By City</a></div>
-    <div><a href="city_year.html">Plots of Count By City</a></div>
-    <br/> <br/>
-    <div id="city_info"></div>
-  </div>
-
-  <!-- center column -->
-  <div id="centercolumn">
-
-<!-- timeline -->
-  <div>
-    <!-- overall trend -->
-    <div>
-      <!-- timeline control -->
-      <div id="timeline_vis" style="width: 500px; height: 200px;"> </div>
-      <!-- year display -->
-      <div>
-        <p>From <span id="yearFrom">1829</span> To <span id="yearTo">2008</span></p>
+  <div class="wrapper">
+      <div id="title_block">
+        <h1>Texas Newspaper Collection</h1>
+        <h3>[Authors]</h3>
+        <div><a href="map_count.html">Map of Count By City</a></div>
+        <div><a href="city_year.html">Plots of Count By City</a></div>
       </div>
-    </div>
+      <!-- timeline control -->
+      <div id="timeline_vis"> </div>
   </div>
 
-    <!-- canvas for map -->
-    <div id="map_canvas"></div>
+  <div class="wrapper">
+    <!-- left column -->
+    <div id="leftcolumn">
+      <div>
+        From <span id="yearFrom">1829</span>
+        To <span id="yearTo">2008</span>
+      </div>
+      <br/>
+      <div id="city_info"></div>
+      <br/>
+      <div id="pub_chart"></div>
+    </div>
+
+    <!-- right column -->
+    <div id="rightcolumn">
+      <!-- canvas for map -->
+      <div id="map_canvas"></div>
+    </div>
   </div>
 
 </body>
