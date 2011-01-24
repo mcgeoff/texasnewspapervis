@@ -165,15 +165,16 @@ function updateCurrCity(city) {
     }
 }
 
-function addMarkers(markerLoc) {
-    for (i in markerLoc) {
+function addMarkers(statsByCity) {
+    for (i in statsByCity) {
         var loc = new google.maps.LatLng(
-            parseFloat(markerLoc[i]["lat"]),
-            parseFloat(markerLoc[i]["lng"]));
+            parseFloat(statsByCity[i]["lat"]),
+            parseFloat(statsByCity[i]["lng"]));
 
-        var good = parseFloat(markerLoc[i]["mGood"]);
-        var total = parseFloat(markerLoc[i]["mTotal"]);
+        var good = parseFloat(statsByCity[i]["mGood"]);
+        var total = parseFloat(statsByCity[i]["mTotal"]);
         var goodPercent = good / total;
+
         var imageName = '';
         if (goodPercent < 0.50) {
             imageName = 'red.png';
@@ -194,8 +195,8 @@ function addMarkers(markerLoc) {
         marker = new google.maps.Marker({
             position: loc,
             map: map,
-            city: markerLoc[i]["city"],
-            year: markerLoc[i]["year"],
+            city: statsByCity[i]["city"],
+            year: statsByCity[i]["year"],
             icon: image,
         });
 
