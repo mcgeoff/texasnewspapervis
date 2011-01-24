@@ -171,11 +171,32 @@ function addMarkers(markerLoc) {
             parseFloat(markerLoc[i]["lat"]),
             parseFloat(markerLoc[i]["lng"]));
 
+        var good = parseFloat(markerLoc[i]["mGood"]);
+        var total = parseFloat(markerLoc[i]["mTotal"]);
+        var goodPercent = good / total;
+        var imageName = '';
+        if (goodPercent < 0.50) {
+            imageName = 'red.png';
+        } else if (goodPercent < 0.75) {
+            imageName = 'blue.png';
+        } else {
+            imageName = 'green.png';
+        }
+
+        var sz = Math.log(total) * 3;
+
+        var image = new google.maps.MarkerImage(imageName,
+            new google.maps.Size(48, 48),
+            new google.maps.Point(0, 0),
+            new google.maps.Point(24, 24),
+            new google.maps.Size(sz, sz));
+
         marker = new google.maps.Marker({
             position: loc,
             map: map,
             city: markerLoc[i]["city"],
             year: markerLoc[i]["year"],
+            icon: image,
         });
 
         addMarkerListener(marker);
