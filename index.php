@@ -88,7 +88,7 @@ function initMap() {
 
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
 
-    addMarkers(statsByCity);
+    updateMarkers(statsByCity);
 
     addPolygon(map);
 
@@ -102,7 +102,7 @@ function onRangechange() {
     document.getElementById('yearFrom').innerHTML = rangeMinYear;
     document.getElementById('yearTo').innerHTML   = rangeMaxYear;
 
-    showMarkers();
+    updateMarkers(statsByCity);
 }
 
 function yearInRange(year) {
@@ -165,14 +165,42 @@ function updateCurrCity(city) {
     }
 }
 
-function addMarkers(statsByCity) {
-    for (i in statsByCity) {
-        var loc = new google.maps.LatLng(
-            parseFloat(statsByCity[i]["lat"]),
-            parseFloat(statsByCity[i]["lng"]));
+function updateMarkers(statsByCity) {
+    // clean up previous markers
+    while (markers.length > 0) {
+        var tmp = markers.pop();
+        tmp.setMap(null);
+    }
 
-        var good = parseFloat(statsByCity[i]["mGood"]);
-        var total = parseFloat(statsByCity[i]["mTotal"]);
+    // compute data by city, for all years in range
+    var data = [];
+    for (i in statsByCity) {
+        if (!yearInRange(statsByCity[i]["year"])) {
+            continue;
+        }
+
+        var city = statsByCity[i]["city"];
+        var lat = statsByCity[i]["lat"];
+        var lng = statsByCity[i]["lng"];
+
+        if (!(city in data)) {
+            data[city] = [];
+            data[city]["city"]  = city;
+            data[city]["lat"]   = lat;
+            data[city]["lng"]   = lng;
+            data[city]["good"]  = 0;
+            data[city]["total"] = 0;
+        }
+
+        data[city]["good"] += parseInt(statsByCity[i]["mGood"]);
+        data[city]["total"] += parseInt(statsByCity[i]["mTotal"]);
+    }
+
+    // add new markers
+    for (i in data) {
+        var loc = new google.maps.LatLng(parseFloat(data[i]["lat"]), parseFloat(data[i]["lng"]));
+        var good = parseFloat(data[i]["good"]);
+        var total = parseFloat(data[i]["total"]);
         var goodPercent = good / total;
 
         var imageName = '';
@@ -184,7 +212,7 @@ function addMarkers(statsByCity) {
             imageName = 'green.png';
         }
 
-        var sz = Math.log(total) * 3;
+        var sz = Math.log(total) * 2;
 
         var image = new google.maps.MarkerImage(imageName,
             new google.maps.Size(48, 48),
@@ -195,8 +223,7 @@ function addMarkers(statsByCity) {
         marker = new google.maps.Marker({
             position: loc,
             map: map,
-            city: statsByCity[i]["city"],
-            year: statsByCity[i]["year"],
+            city: data[i]["city"],
             icon: image,
         });
 
@@ -210,21 +237,6 @@ function addMarkerListener(marker) {
     google.maps.event.addListener(marker, "click", function() {
         updateCurrCity(marker.city);
     });
-}
-
-function showMarkers() {
-    if (!markers) {
-        return;
-    }
-
-    for (i in markers) {
-        if (yearInRange(markers[i].year)) {
-            markers[i].setMap(map);
-        }
-        else {
-            markers[i].setMap(null);
-        }
-    }
 }
 
 /**
