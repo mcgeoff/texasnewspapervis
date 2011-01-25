@@ -198,37 +198,32 @@ function updateMarkers(statsByCity) {
 
     // add new markers
     for (i in data) {
-        var loc = new google.maps.LatLng(parseFloat(data[i]["lat"]), parseFloat(data[i]["lng"]));
+        var loc = new google.maps.LatLng(
+            parseFloat(data[i]["lat"]),
+            parseFloat(data[i]["lng"]));
+
         var good = parseFloat(data[i]["good"]);
         var total = parseFloat(data[i]["total"]);
         var goodPercent = good / total;
 
-        var imageName = '';
-        if (goodPercent < 0.50) {
-            imageName = 'red.png';
-        } else if (goodPercent < 0.75) {
-            imageName = 'blue.png';
-        } else {
-            imageName = 'green.png';
-        }
+        // TODO vary color according to good percent
+        var color = '#FF0000';
 
-        var sz = Math.log(total) * 2;
+        var sz = Math.log(total) * 2000;
 
-        var image = new google.maps.MarkerImage(imageName,
-            new google.maps.Size(48, 48),
-            new google.maps.Point(0, 0),
-            new google.maps.Point(24, 24),
-            new google.maps.Size(sz, sz));
-
-        marker = new google.maps.Marker({
-            position: loc,
+        marker = new google.maps.Circle({
+            center: loc,
             map: map,
             city: data[i]["city"],
-            icon: image,
+            radius: sz,
+            fillColor: color,
+            fillOpacity: 0.5,
+            strokeColor: color,
+            strokeOpacity: 0.5,
+            strokeWeight: 1,
         });
 
         addMarkerListener(marker);
-
         markers.push(marker);
     }
 }
