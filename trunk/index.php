@@ -24,6 +24,17 @@ var statsByYear = <?php getStatsByYear(); ?>;
 var currCity = "Abilene";  // default value
 var minYear = 1829;  // static configuration
 var maxYear = 2008;  // all the years we have data for
+var colorRamp = [
+    '#993404',  // lowest good / total
+    '#d95f0e',
+    '#fe9929',
+    '#fed98e',
+    '#ffffcc',
+    '#c2e699',
+    '#78c679',
+    '#31a354',
+    '#006837',  // highest good / total
+    ];
 
 var pubTrendByYear = getTrendByYear(statsByPub);
 
@@ -83,7 +94,7 @@ function initMap() {
     var myOptions = {
       zoom: 6,
       center: myLatlng,
-      mapTypeId: google.maps.MapTypeId.ROADMAP,
+      mapTypeId: google.maps.MapTypeId.TERRAIN,
     };
 
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
@@ -206,8 +217,17 @@ function updateMarkers(statsByCity) {
         var total = parseFloat(data[i]["total"]);
         var goodPercent = good / total;
 
-        // TODO vary color according to good percent
-        var color = '#FF0000';
+        var color = colorRamp[
+            Math.max(0,
+            Math.min(colorRamp.length - 1,
+            Math.round((goodPercent - 0.5) * 20)))];
+
+        var strokeColor = color;
+        var strokeOpacity = 0;
+        if (currCity == data[i]["city"]) {
+            strokeColor = '#ffff00';
+            strokeOpacity = 1;
+        }
 
         var sz = Math.log(total) * 2000;
 
@@ -217,10 +237,10 @@ function updateMarkers(statsByCity) {
             city: data[i]["city"],
             radius: sz,
             fillColor: color,
-            fillOpacity: 0.5,
-            strokeColor: color,
-            strokeOpacity: 0.5,
-            strokeWeight: 1,
+            fillOpacity: 0.8,
+            strokeColor: strokeColor,
+            strokeOpacity: strokeOpacity,
+            strokeWeight: 4,
         });
 
         addMarkerListener(marker);
@@ -231,6 +251,7 @@ function updateMarkers(statsByCity) {
 function addMarkerListener(marker) {
     google.maps.event.addListener(marker, "click", function() {
         updateCurrCity(marker.city);
+        updateMarkers(statsByCity);
     });
 }
 
@@ -627,7 +648,7 @@ function addPolygon(map) {
 
     t = new google.maps.Polygon({
         paths: c,
-        strokeColor: "#aaaaaa",
+        strokeColor: "#666666",
         strokeOpacity: 0.6,
         strokeWeight: 4,
         fillColor: "#000000",
