@@ -35,6 +35,17 @@ var colorRamp = [
     '#31a354',
     '#006837',  // highest good / total
     ];
+var colorRampThreshold = [
+    0.5,
+    0.55,
+    0.6,
+    0.65,
+    0.7,
+    0.75,
+    0.8,
+    0.85,
+    0.9,
+    ];
 
 var pubTrendByYear = getTrendByYear(statsByPub);
 
@@ -55,6 +66,7 @@ google.setOnLoadCallback(initialize);
  */
 
 function initialize() {
+    drawLegend();
     initMap();
     initTimeline();
 }
@@ -217,10 +229,13 @@ function updateMarkers(statsByCity) {
         var total = parseFloat(data[i]["total"]);
         var goodPercent = good / total;
 
-        var color = colorRamp[
-            Math.max(0,
-            Math.min(colorRamp.length - 1,
-            Math.round((goodPercent - 0.5) * 20)))];
+        var bin = 0;
+        for (; bin < colorRamp.length; bin++) {
+            if (goodPercent <= colorRampThreshold[bin]) {
+                break;
+            }
+        }
+        var color = colorRamp[bin];
 
         var strokeColor = color;
         var strokeOpacity = 0;
@@ -229,13 +244,13 @@ function updateMarkers(statsByCity) {
             strokeOpacity = 1;
         }
 
-        var sz = Math.log(total) * 2000;
+        var radius = Math.log(total) * 2000;
 
         marker = new google.maps.Circle({
             center: loc,
             map: map,
             city: data[i]["city"],
-            radius: sz,
+            radius: radius,
             fillColor: color,
             fillOpacity: 0.8,
             strokeColor: strokeColor,
@@ -286,6 +301,51 @@ function getTrendByYear(statsByPub) {
     }
 
     return result;
+}
+
+function drawLegend() {
+    drawColorLegend();
+    drawSizeLegend();
+}
+
+function drawColorLegend() {
+    var canvas = document.getElementById('legend_color_canvas');
+    if (canvas.getContext) {
+        var ctx = canvas.getContext('2d');
+
+        var x = 0;
+        var y = 0;
+        var s = Math.round(canvas.width / colorRamp.length) - 1;
+        for (var i = 0; i < colorRamp.length; i++) {
+            ctx.fillStyle = colorRamp[i];
+            ctx.fillRect(x + i * s, y, s, s);
+        }
+    }
+    else {
+        alert('need better browser');
+    }
+
+    document.getElementById('legend_color_left').innerHTML =
+        colorRampThreshold[0];
+    document.getElementById('legend_color_middle').innerHTML =
+        colorRampThreshold[Math.round(colorRampThreshold.length / 2)];
+    document.getElementById('legend_color_right').innerHTML =
+        colorRampThreshold[colorRampThreshold.length - 1];
+}
+
+function drawSizeLegend() {
+    var canvas = document.getElementById('legend_size_canvas');
+    if (canvas.getContext) {
+        var r = Math.min(canvas.width, canvas.height) / 2;
+
+        var ctx = canvas.getContext('2d');
+        ctx.beginPath();
+        ctx.arc(r, r, r, 0, 2 * Math.PI, true);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(r, 2*r-0.3*r, 0.3*r, 0, 2 * Math.PI, true);
+        ctx.stroke();
+    }
 }
 
 function addPolygon(map) {
@@ -688,10 +748,39 @@ function addPolygon(map) {
       <div id="pub_chart"></div>
     </div>
 
-    <!-- right column -->
-    <div id="rightcolumn">
+    <!-- center column -->
+    <div id="centercolumn">
       <!-- canvas for map -->
       <div id="map_canvas"></div>
+    </div>
+
+    <!-- right column -->
+    <div id="rightcolumn">
+      <!-- color legend -->
+      <div width="200">
+        <div>
+        <canvas id="legend_color_canvas" width="200" height="20"></canvas>
+        </div>
+        <div>
+        <div id="legend_color_left" style="float:left"></div>
+        <div id="legend_color_middle" style="float:left"></div>
+        <div id="legend_color_right" style="float:left"></div>
+        </div>
+      </div>
+
+      <br/> <br/>
+
+      <!-- size legend -->
+      <div>
+        <div style="float:left">
+          <canvas id="legend_size_canvas" width="50" height="50"></canvas>
+        </div>
+        <div style="float:left">
+          <div id="legend_size_content">
+          numbers here
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

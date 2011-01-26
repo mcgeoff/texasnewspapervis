@@ -26,8 +26,13 @@
     float: left;
 }
 
+#centercolumn {
+    width: 45%;
+    float: left;
+}
+
 #rightcolumn {
-    width: 60%;
+    width: 15%;
     float: left;
 }
 
