@@ -29,21 +29,17 @@ var colorRamp = [
     '#d95f0e',
     '#fe9929',
     '#fed98e',
-    '#ffffcc',
-    '#c2e699',
-    '#78c679',
-    '#31a354',
-    '#006837',  // highest good / total
+    '#ffffcc',  // highest good / total
+//    '#c2e699',
+//    '#78c679',
+//    '#31a354',
+//    '#006837',  // highest good / total
     ];
 var colorRampThreshold = [
     0.5,
-    0.55,
     0.6,
-    0.65,
     0.7,
-    0.75,
     0.8,
-    0.85,
     0.9,
     ];
 
@@ -74,10 +70,10 @@ function initialize() {
 function initTimeline() {
     var data = new google.visualization.DataTable();
     data.addColumn('date', 'Date');
-    data.addColumn('number', 'Total');
+    data.addColumn('number', 'Total Words Scanned');
     data.addColumn('string', 'title1');
     data.addColumn('string', 'text1');
-    data.addColumn('number', 'Correct');
+    data.addColumn('number', 'Correct Words Scanned');
     data.addColumn('string', 'title2');
     data.addColumn('string', 'text2');
 
@@ -759,7 +755,7 @@ function addPolygon(map) {
       <!-- color legend -->
       <div width="200">
         <div>
-        <canvas id="legend_color_canvas" width="200" height="20"></canvas>
+        <canvas id="legend_color_canvas" width="100" height="20"></canvas>
         </div>
         <div>
         <div id="legend_color_left" style="float:left"></div>
