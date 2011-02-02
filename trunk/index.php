@@ -30,10 +30,6 @@ var colorRamp = [
     '#fe9929',
     '#fed98e',
     '#ffffcc',  // highest good / total
-//    '#c2e699',
-//    '#78c679',
-//    '#31a354',
-//    '#006837',  // highest good / total
     ];
 var colorRampThreshold = [
     0.5,
@@ -118,8 +114,7 @@ function onRangechange() {
     rangeMinYear = timeline.getVisibleChartRange().start.getFullYear();
     rangeMaxYear = timeline.getVisibleChartRange().end.getFullYear();
 
-    document.getElementById('yearFrom').innerHTML = rangeMinYear;
-    document.getElementById('yearTo').innerHTML   = rangeMaxYear;
+    // TODO update city display
 
     updateMarkers(statsByCity);
 }
@@ -169,6 +164,7 @@ function updateCurrCity(city) {
     // update city info in right column
     var city_info = document.getElementById("city_info");
     var stats = null;
+
     // TODO the choice of year is not quite meaningful right now
     for (var i = 0; i < statsByCity.length; i++) {
         if (statsByCity[i]["city"] == currCity &&
@@ -177,8 +173,9 @@ function updateCurrCity(city) {
         }
     }
     if (stats != null) {
-        city_info.innerHTML = "Year: " + stats["year"] + "<br/>" +
-                              "City: " + currCity + "<br/>" +
+        city_info.innerHTML = "City: " + currCity + "<br/>" +
+                              "From " + rangeMinYear +
+                              " to " + rangeMaxYear + "</br>" +
                               "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
                               "Total Characters Scanned: " + stats["mTotal"] + "<br/>";
     }
@@ -734,11 +731,6 @@ function addPolygon(map) {
   <div class="wrapper">
     <!-- left column -->
     <div id="leftcolumn">
-      <div>
-        From <span id="yearFrom">1829</span>
-        To <span id="yearTo">2008</span>
-      </div>
-      <br/>
       <div id="city_info"></div>
       <br/>
       <div id="pub_chart"></div>
