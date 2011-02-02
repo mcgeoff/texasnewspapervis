@@ -22,6 +22,7 @@ var statsByCity = <?php getStatsByCity(); ?>;
 var statsByYear = <?php getStatsByYear(); ?>;
 
 var currCity = "Abilene";  // default value
+var currState = "Texas";
 var minYear = 1829;  // static configuration
 var maxYear = 2008;  // all the years we have data for
 var colorRamp = [
@@ -50,7 +51,7 @@ var timeline;
 var rangeMinYear = minYear;
 var rangeMaxYear = maxYear;
 
-google.load('visualization', '1', {'packages':['annotatedtimeline', 'imagesparkline']});
+google.load('visualization', '1', {'packages':['annotatedtimeline', 'corechart']});
 google.setOnLoadCallback(initialize);
 
 /*
@@ -132,40 +133,80 @@ function updateCurrCity(city) {
     // record newly updated city
     currCity = city;
 
-    // update chart table for publications
-    var div_pub_chart = document.getElementById('pub_chart');
-    var data = new google.visualization.DataTable();
+    // remove previous sparklines
+    var pub_chart = document.getElementById('pub_chart');
+    while (pub_chart.childNodes.length > 0) {
+        pub_chart.removeChild(pub_chart.firstChild);
+    }
 
-    var numYears = maxYear - minYear + 1;
-    data.addRows(numYears);
-
-    var numColumn = 0;
+    // add sparklines for publications
+    var bgColors = ['#ffffff', '#efefef'];
+    var idx = 0;
+    var numYears = maxYear - minYear + 1; 
     for (var k in pubTrendByYear) {
         if (pubTrendByYear[k]['city'] != currCity) {
             continue;
         }
 
-        var pubTitle = pubTrendByYear[k]["pub"];
-        var a = pubTrendByYear[k]["goodPercent"];
+        // prepare data
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Year');
+        data.addColumn('number', '%Good');
+        data.addRows(numYears);
 
-        data.addColumn("number", pubTitle);
+        var goodPercent = pubTrendByYear[k]["goodPercent"];
         for (var i = 0; i < numYears; i++) {
-            if (isNaN(a[i])) {
-                a[i] = 0;
+            if (isNaN(goodPercent[i])) {
+                goodPercent[i] = 0;
             }
-            data.setValue(i, numColumn, a[i]);
+            var strYear = "" + (i + minYear);
+            data.setValue(i, 0, strYear);
+            data.setValue(i, 1, goodPercent[i]);
         }
-        numColumn = numColumn + 1;
+
+        // add DIV element for pub title
+        var title_div = document.createElement('div');
+        title_div.innerHTML =
+            '<a href="http://west.stanford.edu">' +
+            pubTrendByYear[k]['pub'] +
+            '</a>';
+        pub_chart.appendChild(title_div);
+
+        // add new DIV element for chart
+        var chart_div = document.createElement('div');
+        chart_div.id = 'pub_chart_div' + k;
+        pub_chart.appendChild(chart_div);
+
+        // draw chart
+        var chart = new google.visualization.LineChart(chart_div);
+        var bgColor = bgColors[idx % 2]; // specify background color
+        idx++;
+        chart.draw(data, {
+            backgroundColor: bgColor,
+            gridlineColor: bgColor,
+            chartArea: {
+                left: 20,
+                top: 0,
+                width: '80%',
+                height: 15,
+            },
+            height: 30,
+            lineWidth: 1,
+            colors: [colorRamp[Math.floor(colorRamp.length / 2)]],
+            hAxis: {
+                textPosition: 'out',
+                showTextEvery: 59,
+            },
+            vAxis: {
+                textPosition: 'none',
+            },
+        });
     }
-    var pub_chart = new google.visualization.ImageSparkLine(div_pub_chart);
-    pub_chart.draw(data, {heigth: numColumn * 30, showAxisLines: true,
-                      showValueLabels: false, labelPosition: 'right', fill: true});
 
     // update city info in right column
+    // TODO the choice of year is not quite meaningful right now
     var city_info = document.getElementById("city_info");
     var stats = null;
-
-    // TODO the choice of year is not quite meaningful right now
     for (var i = 0; i < statsByCity.length; i++) {
         if (statsByCity[i]["city"] == currCity &&
             yearInRange(statsByCity[i]["year"])) {
@@ -173,11 +214,11 @@ function updateCurrCity(city) {
         }
     }
     if (stats != null) {
-        city_info.innerHTML = "City: " + currCity + "<br/>" +
-                              "From " + rangeMinYear +
-                              " to " + rangeMaxYear + "</br>" +
-                              "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
-                              "Total Characters Scanned: " + stats["mTotal"] + "<br/>";
+        city_info.innerHTML =
+            currCity + ", " + currState + ", " +
+            rangeMinYear + " - " + rangeMaxYear + "</br>" +
+            "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
+            "Total Characters Scanned: " + stats["mTotal"] + "<br/>";
     }
 }
 
