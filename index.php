@@ -28,11 +28,15 @@ var maxYear = config.yearRange.max;
 var colorRamp = config.colorRamp;
 var colorRampThreshold = config.colorRampThreshold;
 
-// global state variables, TODO to be wrapped together
-var currCity = config.defaultCity;
-var currState = config.defaultState;
-var rangeMinYear = minYear;
-var rangeMaxYear = maxYear;
+// global state variables wrapped together
+var currentState = {
+    city: config.defaultCity,
+    state: config.defaultState,
+    yearRange: {
+        min: minYear,
+        max: maxYear,
+    },
+};
 
 // global widgets and structures
 var map = null;
@@ -40,7 +44,6 @@ var markers = [];
 var timeline = null;
 
 var pubTrendByYear = getTrendByYear(statsByPub, minYear, maxYear);
-
 
 /*
  * js method section
@@ -120,24 +123,23 @@ function initMap() {
 
     updateMarkers(statsByCity);
 
-    addPolygon(map);
+    addContour(map);
 
-    updateCurrCity(currCity);
+    updateCurrCity(currentState.city);
 }
 
 function onRangechange() {
-    rangeMinYear = timeline.getVisibleChartRange().start.getFullYear();
-    rangeMaxYear = timeline.getVisibleChartRange().end.getFullYear();
+    currentState.yearRange.min = timeline.getVisibleChartRange().start.getFullYear();
+    currentState.yearRange.max = timeline.getVisibleChartRange().end.getFullYear();
 
-    // TODO update city display
-
+    updateCityInfo();
     updateMarkers(statsByCity);
 }
 
 function yearInRange(year) {
     var inRange = false;
-    if (parseInt(year) >= parseInt(rangeMinYear) &&
-        parseInt(year) <= parseInt(rangeMaxYear)) {
+    if (parseInt(year) >= parseInt(currentState.yearRange.min) &&
+        parseInt(year) <= parseInt(currentState.yearRange.max)) {
         inRange = true;
     }
     return inRange;
@@ -145,7 +147,7 @@ function yearInRange(year) {
 
 function updateCurrCity(city) {
     // record newly updated city
-    currCity = city;
+    currentState.city = city;
 
     // remove previous sparklines
     var pub_chart = document.getElementById('pub_chart');
@@ -158,7 +160,7 @@ function updateCurrCity(city) {
     var idx = 0;
     var numYears = maxYear - minYear + 1; 
     for (var k in pubTrendByYear) {
-        if (pubTrendByYear[k]['city'] != currCity) {
+        if (pubTrendByYear[k]['city'] != currentState.city) {
             continue;
         }
 
@@ -217,23 +219,28 @@ function updateCurrCity(city) {
         });
     }
 
-    // update city info in right column
-    // TODO the choice of year is not quite meaningful right now
+    updateCityInfo();
+}
+
+// update city info in right column
+function updateCityInfo() {
     var city_info = document.getElementById("city_info");
     var stats = null;
     for (var i = 0; i < statsByCity.length; i++) {
-        if (statsByCity[i]["city"] == currCity &&
+        if (statsByCity[i]["city"] == currentState.city &&
             yearInRange(statsByCity[i]["year"])) {
             stats = statsByCity[i];
         }
     }
     if (stats != null) {
         city_info.innerHTML =
-            currCity + ", " + currState + ", " +
-            rangeMinYear + " - " + rangeMaxYear + "</br>" +
+            currentState.city + ", " + currentState.state + ", " +
+            currentState.yearRange.min + " - " +
+            currentState.yearRange.max + "</br>" +
             "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
             "Total Characters Scanned: " + stats["mTotal"] + "<br/>";
     }
+
 }
 
 function updateMarkers(statsByCity) {
@@ -287,7 +294,7 @@ function updateMarkers(statsByCity) {
 
         var strokeColor = color;
         var strokeOpacity = 0;
-        if (currCity == data[i]["city"]) {
+        if (currentState.city == data[i]["city"]) {
             strokeColor = '#ffff00';
             strokeOpacity = 1;
         }
@@ -396,7 +403,7 @@ function drawSizeLegend() {
     }
 }
 
-function addPolygon(map) {
+function addContour(map) {
     var c = [];
     for (var i = 0; i < config.contour.length; i++) {
         c.push(new google.maps.LatLng(config.contour[i][0], config.contour[i][1]));
