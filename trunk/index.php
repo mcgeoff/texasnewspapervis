@@ -11,7 +11,10 @@
 <script type="text/javascript" src="./config.js"></script>
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
-
+<script type="text/javascript" src="http://api.simile-widgets.org/timeline/2.3.1/timeline-api.js"></script> 
+<link rel='stylesheet' href='http://www.simile-widgets.org/timeline/examples/styles.css' type='text/css' /> 
+<link rel='stylesheet' href='timeline_style.css' type='text/css' /> 
+ 
 
 <script type="text/javascript">
 
@@ -42,6 +45,8 @@ var currentState = {
 var map = null;
 var markers = [];
 var timeline = null;
+var simile_timeline;    // for simile timeline
+var simile_resizeTimerID = null;
 
 var pubTrendByYear = getTrendByYear(statsByPub, minYear, maxYear);
 
@@ -51,13 +56,13 @@ var pubTrendByYear = getTrendByYear(statsByPub, minYear, maxYear);
 
 // include google visualization widgets
 google.load('visualization', '1', {'packages':['annotatedtimeline', 'corechart']});
-google.setOnLoadCallback(initialize);
 
 function initialize() {
     initTitleBlock();
     drawLegend();
     initMap();
     initTimeline();
+    initSimileTimeline();
 }
 
 function initTitleBlock() {
@@ -419,12 +424,69 @@ function addContour(map) {
     }).setMap(map);
 }
 
+function initSimileTimeline() {
+    var eventSource = new Timeline.DefaultEventSource(0);
+
+    var theme = Timeline.ClassicTheme.create();
+    theme.event.bubble.width = 420;
+    theme.event.bubble.height = 120;
+    theme.event.instant.icon = "dull-brown-circle.png";
+    var d = Timeline.DateTime.parseGregorianDateTime("1870")
+    var bandInfos = [
+        Timeline.createBandInfo({
+            width:          "10%", 
+            intervalUnit:   Timeline.DateTime.DECADE, 
+            intervalPixels: 200,
+            date:           d,
+            showEventText:  false,
+            theme:          theme
+        }),
+        Timeline.createBandInfo({
+            width:          "90%", 
+            intervalUnit:   Timeline.DateTime.DECADE, 
+            intervalPixels: 200,
+            eventSource:    eventSource,
+            date:           d,
+            theme:          theme
+        })
+    ];
+
+    bandInfos[0].syncWith = 1;
+    bandInfos[0].highlight = false;
+
+    simile_timeline = Timeline.create(document.getElementById("simile_timeline"), bandInfos, Timeline.HORIZONTAL);
+    simile_timeline.loadXML("timeline_data.xml", function(xml, url) {
+        eventSource.loadXML(xml, url);
+    });
+}
+function themeSwitch(){
+    var timeline = document.getElementById('simile_timeline');
+    timeline.className = (timeline.className.indexOf('dark-theme') != -1) ?
+                         timeline.className.replace('dark-theme', '') :
+                         timeline.className += ' dark-theme';
+}
+function onResize() {
+    if (simile_resizeTimerID == null) {
+        simile_resizeTimerID = window.setTimeout(function() {
+            simile_resizeTimerID = null;
+            simile_timeline.layout();
+        }, 500);
+    }
+}
+function setDate(date) {
+	 simile_timeline.getBand(0).setCenterVisibleDate(new Date(date, 0, 1));
+}
+function getCenter() {
+	 alert(simile_timeline.getBand(0).getCenterVisibleDate());
+}
+
+
+
 </script>
 
 </head>
 
-<body>
-
+<body onload="initialize();" onresize="onResize();"> 
   <!-- Title Bar -->
   <div class="wrapper">
       <div id="title_block">
@@ -476,6 +538,16 @@ function addContour(map) {
       </div>
     </div>
   </div>
+
+  <!-- SIMILE timeline -->
+  <div id="simile_timeline" class="timeline-default" style="height: 400px;"></div> 
+    <button onClick="setDate('1890');">set date to 1890</button>
+    <button onClick="getCenter()">get currently viewed date</button>
+    <button onclick="themeSwitch();">Switch theme</button> 
+    <script type="text/javascript">
+        var timeline = document.getElementById('simile_timeline');
+        timeline.className += ' dark-theme';
+    </script>
 
 </body>
 </html>

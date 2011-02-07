@@ -46,3 +46,10 @@
     width: 100%;
     height: 500px;
 }
+
+#simile_timeline {
+    font-family: Trebuchet MS, Helvetica, Arial, sans serif;
+    font-size: 8pt;
+    border: 1px solid #aaa;
+}
+
