@@ -5,15 +5,19 @@
 <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
 <title>Texas Newspaper Collection</title>
 
-<link rel="stylesheet" type="text/css" href="style.css" />
 
 <!-- Dependencies --> 
 <script type="text/javascript" src="./config.js"></script>
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
 <script type="text/javascript" src="http://api.simile-widgets.org/timeline/2.3.1/timeline-api.js"></script> 
-<link rel='stylesheet' href='http://www.simile-widgets.org/timeline/examples/styles.css' type='text/css' /> 
-<link rel='stylesheet' href='timeline_style.css' type='text/css' /> 
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.8/jquery-ui.min.js"></script>
+<link rel="stylesheet" type="text/css" href="http://www.simile-widgets.org/timeline/examples/styles.css"/> 
+<link type="text/css" rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.8/themes/base/jquery-ui.css">
+<link rel="stylesheet" type="text/css" href="timeline_style.css"/> 
+<link rel="stylesheet" type="text/css" href="style.css"/>
  
 
 <script type="text/javascript">
@@ -36,8 +40,12 @@ var currentState = {
     city: config.defaultCity,
     state: config.defaultState,
     yearRange: {
-        min: minYear,
-        max: maxYear,
+        min: minYear,   // From, inclusive
+        max: maxYear,   // To, inclusive
+    },
+    colorRange: {
+        min: 0,                             // From, inclusive
+        max: colorRampThreshold.length - 1, // To, inclusive
     },
 };
 
@@ -57,31 +65,22 @@ var pubTrendByYear = getTrendByYear(statsByPub, minYear, maxYear);
 // include google visualization widgets
 google.load('visualization', '1', {'packages':['annotatedtimeline', 'corechart']});
 
-function initialize() {
+$(document).ready(function () {
     initTitleBlock();
     drawLegend();
     initMap();
     initTimeline();
     initSimileTimeline();
-}
+});
 
 function initTitleBlock() {
     // read contents from config.js
     // add generate title block accordingly
+    var title_div = $("#title_block");
 
-    var title_div = document.getElementById('title_block');
-
-    var title = document.createElement('h1');
-    title.innerHTML = config.title;
-    title_div.appendChild(title);
-
-    var subTitle = document.createElement('h3');
-    subTitle.innerHTML = config.subTitle;
-    title_div.appendChild(subTitle);
-
-    var introText = document.createElement('p');
-    introText.innerHTML = config.introText;
-    title_div.appendChild(introText);
+    title_div.append($('<h1>' + config.title + '</h1>'));
+    title_div.append($('<h3>' + config.subTitle + '</h3>'));
+    title_div.append($('<p>' + config.introText + '</p>'))
 }
 
 function initTimeline() {
@@ -126,11 +125,10 @@ function initMap() {
 
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
 
-    updateMarkers(statsByCity);
-
     addContour(map);
 
     updateCurrCity(currentState.city);
+    updateMarkers(statsByCity);
 }
 
 function onRangechange() {
@@ -281,13 +279,19 @@ function updateMarkers(statsByCity) {
 
     // add new markers
     for (i in data) {
-        var loc = new google.maps.LatLng(
-            parseFloat(data[i]["lat"]),
-            parseFloat(data[i]["lng"]));
-
         var good = parseFloat(data[i]["good"]);
         var total = parseFloat(data[i]["total"]);
         var goodPercent = good / total;
+
+        // keep only markers with color in range
+        if (goodPercent < colorRampThreshold[currentState.colorRange.min] ||
+            goodPercent > colorRampThreshold[currentState.colorRange.max] + 0.1) {
+            continue;
+        }
+
+        var loc = new google.maps.LatLng(
+            parseFloat(data[i]["lat"]),
+            parseFloat(data[i]["lng"]));
 
         var bin = 0;
         for (; bin < colorRamp.length; bin++) {
@@ -372,7 +376,7 @@ function drawColorLegend() {
     var canvas = document.getElementById('legend_color_canvas');
     if (canvas.getContext) {
         var ctx = canvas.getContext('2d');
-
+ 
         var x = 0;
         var y = 0;
         var s = Math.round(canvas.width / colorRamp.length) - 1;
@@ -380,17 +384,39 @@ function drawColorLegend() {
             ctx.fillStyle = colorRamp[i];
             ctx.fillRect(x + i * s, y, s, s);
         }
+            
+        $( "#legend_slider").slider({
+            orientation: "horizontal",
+            max: colorRamp.length - 1,
+            range: true,
+            values: [0, colorRamp.length - 1],
+            step: 1,
+            change: onColorRangeChange,
+        });
+
+        onColorRangeChange();
     }
     else {
         alert('need better browser');
     }
+}
 
-    document.getElementById('legend_color_left').innerHTML =
-        colorRampThreshold[0];
-    document.getElementById('legend_color_middle').innerHTML =
-        colorRampThreshold[Math.round(colorRampThreshold.length / 2)];
-    document.getElementById('legend_color_right').innerHTML =
-        colorRampThreshold[colorRampThreshold.length - 1];
+function onColorRangeChange() {
+    // record updated color range
+    var range = $( "#legend_slider" ).slider("values");
+    currentState.colorRange.min = range[0];
+    currentState.colorRange.max = range[1];
+
+    // update display
+    var percentageMin = colorRampThreshold[currentState.colorRange.min];
+    var percentageMax = colorRampThreshold[currentState.colorRange.max] + 0.1;
+    percentageMin = (percentageMin * 100).toPrecision(3) + '%';
+    percentageMax = (percentageMax * 100).toPrecision(3) + '%';
+    $("#color_range_left").html(percentageMin);
+    $("#color_range_right").html(percentageMax);
+
+    // update markers, keeping only those with color in range
+    updateMarkers(statsByCity);
 }
 
 function drawSizeLegend() {
@@ -481,12 +507,11 @@ function getCenter() {
 }
 
 
-
 </script>
 
 </head>
 
-<body onload="initialize();" onresize="onResize();"> 
+<body onresize="onResize();"> 
   <!-- Title Bar -->
   <div class="wrapper">
       <div id="title_block">
@@ -514,12 +539,16 @@ function getCenter() {
       <!-- color legend -->
       <div width="200">
         <div>
-        <canvas id="legend_color_canvas" width="100" height="20"></canvas>
+            <canvas id="legend_color_canvas" height="30"></canvas>
+            <div id="legend_slider"></div>
         </div>
+        <br/> <br/> <br/>
         <div>
-        <div id="legend_color_left" style="float:left"></div>
-        <div id="legend_color_middle" style="float:left"></div>
-        <div id="legend_color_right" style="float:left"></div>
+          Showing publications with correct percentage bwtween
+          <span id="color_range_left"></span>
+          and
+          <span id="color_range_right"></span>
+          .
         </div>
       </div>
 
@@ -540,7 +569,8 @@ function getCenter() {
   </div>
 
   <!-- SIMILE timeline -->
-  <div id="simile_timeline" class="timeline-default" style="height: 400px;"></div> 
+  <div>
+    <div id="simile_timeline" class="timeline-default" style="height: 400px;"></div>
     <button onClick="setDate('1890');">set date to 1890</button>
     <button onClick="getCenter()">get currently viewed date</button>
     <button onclick="themeSwitch();">Switch theme</button> 
@@ -548,6 +578,7 @@ function getCenter() {
         var timeline = document.getElementById('simile_timeline');
         timeline.className += ' dark-theme';
     </script>
+  <div>
 
 </body>
 </html>

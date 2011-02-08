@@ -52,4 +52,28 @@
     font-size: 8pt;
     border: 1px solid #aaa;
 }
+    
+#legend_slider {
+    float: left;
+    clear: left;
+    width: 160px;
+    margin-left: 3px;
+    position: absolute;
+}
+#legend_slider .ui-slider-range {
+    background: none;
+}
+.ui-slider .ui-slider-handle { 
+    background: url(handle.png);
+    border:none;
+    width:27px;
+    height:17px;
+    margin-top:25px;
+    }
+#legend_color_canvas {
+    width: 180px;
+    margin-top:0px;
+    z-index:10;
+    position:absolute;
+}
 
