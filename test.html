@@ -1,61 +1,21 @@
 <html>
   <head>
-    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-    <script type="text/javascript">
-      google.load("visualization", "1", {packages:["corechart"]});
-      google.setOnLoadCallback(drawChart);
-      function drawChart() {
-        var c = ['#ffffff', '#cccccc'];
-        for (var i = 0; i < 10; i++) {
-
-        var data = new google.visualization.DataTable();
-        data.addColumn('string', 'Year');
-        data.addColumn('number', 'Total');
-        data.addRows(4);
-        data.setValue(0, 0, '2004');
-        data.setValue(0, 1, 1000);
-        data.setValue(1, 0, '2005');
-        data.setValue(1, 1, 1170);
-        data.setValue(2, 0, '2006');
-        data.setValue(2, 1, 860);
-        data.setValue(3, 0, '2007');
-        data.setValue(3, 1, 1030);
-
-
-            var d = document.createElement('div');
-            d.id = 'chart_div' + i;
-            document.getElementById('chart_div').appendChild(d);
-            
-            var chart = new google.visualization.LineChart(d);
-
-            var bgColor = c[i % 2];
-            chart.draw(data, {
-                backgroundColor: bgColor,
-                gridlineColor: bgColor,
-                chartArea: {
-                    left: 20,
-                    top: 0,
-                    width: 300,
-                    height: 15,
-                },
-                width: 400,
-                height: 30,
-                lineWidth: 1,
-                title: 'Publication name',
-                hAxis: {
-                    textPosition: 'out',
-                    showTextEvery: 2,
-                },
-                vAxis: {
-                    textPosition: 'none',
-                },
-            });
-        }
-      }
-    </script>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
+  <script type="text/javascript">
+  function onClick() {
+      $('#t').hide('slow', function() {
+          $('#t').html(Math.random());
+      });
+      $('#t').show('slow');
+  }
+  </script>
   </head>
 
   <body>
-    <div id="chart_div"></div>
+    <div id="d" onclick="onClick();">
+    Where is the
+    <p id='t' style='display: none'></p>
+    content?
+    </div>
   </body>
 </html>
