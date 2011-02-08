@@ -227,7 +227,6 @@ function updateCurrCity(city) {
 
 // update city info in right column
 function updateCityInfo() {
-    var city_info = document.getElementById("city_info");
     var stats = null;
     for (var i = 0; i < statsByCity.length; i++) {
         if (statsByCity[i]["city"] == currentState.city &&
@@ -236,12 +235,16 @@ function updateCityInfo() {
         }
     }
     if (stats != null) {
-        city_info.innerHTML =
+        $('#city_info').hide('slow', function() {
+        $('#city_info').html(
             currentState.city + ", " + currentState.state + ", " +
             currentState.yearRange.min + " - " +
             currentState.yearRange.max + "</br>" +
             "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
-            "Total Characters Scanned: " + stats["mTotal"] + "<br/>";
+            "Total Characters Scanned: " + stats["mTotal"] + "<br/>"
+            );
+        });
+        $('#city_info').show('slow');
     }
 
 }
@@ -523,7 +526,7 @@ function getCenter() {
   <div class="wrapper">
     <!-- left column -->
     <div id="leftcolumn">
-      <div id="city_info"></div>
+      <div id="city_info" style="display: none"></div>
       <br/>
       <div id="pub_chart"></div>
     </div>
@@ -544,9 +547,9 @@ function getCenter() {
         </div>
         <br/> <br/> <br/>
         <div>
-          Showing publications with correct percentage bwtween
+          Publications with correct percentage 
           <span id="color_range_left"></span>
-          and
+          -
           <span id="color_range_right"></span>
           .
         </div>
