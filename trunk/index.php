@@ -51,6 +51,8 @@ var currentState = {
         min: 0,                             // From, inclusive
         max: colorRampThreshold.length - 1, // To, inclusive
     },
+    // update marker size scale through <select>
+    markerSizeScale: 'log',
 };
 
 // global widgets and structures
@@ -74,6 +76,11 @@ $(document).ready(function () {
     drawMap();
     drawTimeline();
     drawSimileTimeline();
+
+    $('#scale_select').change(function () {
+        currentState.markerSizeScale = $('#scale_select').val();
+        onMarkerSizeScaleChange();
+    });
 });
 
 /*****************************************************************************/
@@ -327,20 +334,18 @@ function drawCityInfo() {
             $('#city_info').html(
                 currentState.city + ", " + currentState.state + ", " +
                 currentState.yearRange.min + " - " +
-                currentState.yearRange.max + "</br>" +
+                currentState.yearRange.max + "<br/>" +
                 "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
                 "Total Characters Scanned: " + stats["mTotal"] + "<br/>");
         });
         $('#city_info').show('slow');
     }
-
 }
 
 function drawMarkers(statsByCity) {
     // clean up previous markers
     while (markers.length > 0) {
-        var tmp = markers.pop();
-        tmp.setMap(null);
+        markers.pop().setMap(null);
     }
 
     // compute data by city, for all years in range
@@ -398,7 +403,11 @@ function drawMarkers(statsByCity) {
             strokeOpacity = 1;
         }
 
-        var radius = Math.log(total) * 2000;
+        // scale marker size according to current select
+        var radius = Math.ceil(total / 2000);
+        if (currentState.markerSizeScale == 'log') {
+            radius = Math.log(total) * 2000;
+        }
 
         marker = new google.maps.Circle({
             center: loc,
@@ -431,8 +440,10 @@ function drawColorRangeDisplay() {
 /*****************************************************************************/
 // state transition and control functions
 /*****************************************************************************/
+
 // the update of year range and color range are done through sliders
 // so only here we need explicit update function
+
 function updateCity(city) {
     // record newly updated city
     currentState.city = city;
@@ -465,6 +476,11 @@ function onColorRangeChange() {
 
     // update markers, keeping only those with color in range
     drawMarkers(statsByCity);
+}
+
+function onMarkerSizeScaleChange() {
+    drawMarkers(statsByCity);
+    drawSizeLegend();
 }
 
 
@@ -587,14 +603,20 @@ function getTrendByYear(statsByPub, minYear, maxYear) {
 
       <!-- size legend -->
       <div>
-        <div style="float:left">
+        <div>
           <canvas id="legend_size_canvas" width="50" height="50"></canvas>
         </div>
-        <div style="float:left">
+        <div>
           <div id="legend_size_content">
           numbers here
           </div>
         </div>
+      </div>
+      <div>
+        <form><select id="scale_select">
+          <option>log</option>
+          <option>linear</option>
+        </select></form>
       </div>
     </div>
   </div>
