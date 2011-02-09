@@ -22,9 +22,9 @@
 
 <script type="text/javascript">
 
-/*
- * global data section
- */
+/*****************************************************************************/
+// global data section
+/*****************************************************************************/
 var statsByPub  = <?php getStatsByPub(); ?>;
 var statsByCity = <?php getStatsByCity(); ?>;
 var statsByYear = <?php getStatsByYear(); ?>;
@@ -37,12 +37,16 @@ var colorRampThreshold = config.colorRampThreshold;
 
 // global state variables wrapped together
 var currentState = {
+    // update city through update function below
     city: config.defaultCity,
+    // never updated
     state: config.defaultState,
+    // update year range through google timeline
     yearRange: {
         min: minYear,   // From, inclusive
         max: maxYear,   // To, inclusive
     },
+    // update color range through color legend
     colorRange: {
         min: 0,                             // From, inclusive
         max: colorRampThreshold.length - 1, // To, inclusive
@@ -58,22 +62,24 @@ var simile_resizeTimerID = null;
 
 var pubTrendByYear = getTrendByYear(statsByPub, minYear, maxYear);
 
-/*
- * js method section
- */
-
+/*****************************************************************************/
+// js method section
+/*****************************************************************************/
 // include google visualization widgets
 google.load('visualization', '1', {'packages':['annotatedtimeline', 'corechart']});
 
 $(document).ready(function () {
-    initTitleBlock();
+    drawTitleBlock();
     drawLegend();
-    initMap();
-    initTimeline();
-    initSimileTimeline();
+    drawMap();
+    drawTimeline();
+    drawSimileTimeline();
 });
 
-function initTitleBlock() {
+/*****************************************************************************/
+// functions used to draw parts on the screen
+/*****************************************************************************/
+function drawTitleBlock() {
     // read contents from config.js
     // add generate title block accordingly
     var title_div = $("#title_block");
@@ -83,7 +89,7 @@ function initTitleBlock() {
     title_div.append($('<p>' + config.introText + '</p>'))
 }
 
-function initTimeline() {
+function drawTimeline() {
     var data = new google.visualization.DataTable();
     data.addColumn('date', 'Date');
     data.addColumn('number', 'Total Words Scanned');
@@ -110,10 +116,10 @@ function initTimeline() {
     google.visualization.events.addListener(
         timeline,
         'rangechange',
-        onRangechange);
+        onYearRangechange);
 }
 
-function initMap() {
+function drawMap() {
     var myLatlng = new google.maps.LatLng(
         config.map.center.lat,
         config.map.center.lng);
@@ -125,34 +131,117 @@ function initMap() {
 
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
 
-    addContour(map);
+    drawContour(map);
 
-    updateCurrCity(currentState.city);
-    updateMarkers(statsByCity);
+    updateCity(currentState.city);
+    drawMarkers(statsByCity);
 }
 
-function onRangechange() {
-    currentState.yearRange.min = timeline.getVisibleChartRange().start.getFullYear();
-    currentState.yearRange.max = timeline.getVisibleChartRange().end.getFullYear();
-
-    updateCityInfo();
-    updateMarkers(statsByCity);
-    setSimileCenterYear('' + Math.round((currentState.yearRange.min + currentState.yearRange.max) / 2));
+function drawLegend() {
+    drawColorLegend();
+    drawSizeLegend();
 }
 
-function yearInRange(year) {
-    var inRange = false;
-    if (parseInt(year) >= parseInt(currentState.yearRange.min) &&
-        parseInt(year) <= parseInt(currentState.yearRange.max)) {
-        inRange = true;
+function drawColorLegend() {
+    var canvas = document.getElementById('legend_color_canvas');
+    if (canvas.getContext) {
+        var ctx = canvas.getContext('2d');
+ 
+        var x = 0;
+        var y = 0;
+        var s = Math.round(canvas.width / colorRamp.length) - 1;
+        for (var i = 0; i < colorRamp.length; i++) {
+            ctx.fillStyle = colorRamp[i];
+            ctx.fillRect(x + i * s, y, s, s);
+        }
+            
+        $( "#legend_slider").slider({
+            orientation: "horizontal",
+            max: colorRamp.length - 1,
+            range: true,
+            values: [0, colorRamp.length - 1],
+            step: 1,
+            change: onColorRangeChange,
+        });
+
+        onColorRangeChange();
     }
-    return inRange;
+    else {
+        alert('need better browser');
+    }
 }
 
-function updateCurrCity(city) {
-    // record newly updated city
-    currentState.city = city;
+function drawSizeLegend() {
+    var canvas = document.getElementById('legend_size_canvas');
+    if (canvas.getContext) {
+        var r = Math.min(canvas.width, canvas.height) / 2;
 
+        var ctx = canvas.getContext('2d');
+        ctx.beginPath();
+        ctx.arc(r, r, r, 0, 2 * Math.PI, true);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(r, 2*r-0.3*r, 0.3*r, 0, 2 * Math.PI, true);
+        ctx.stroke();
+    }
+}
+
+function drawContour(map) {
+    var c = [];
+    for (var i = 0; i < config.contour.length; i++) {
+        c.push(new google.maps.LatLng(config.contour[i][0], config.contour[i][1]));
+    }
+
+    new google.maps.Polygon({
+        paths: c,
+        strokeColor: "#666666",
+        strokeOpacity: 0.6,
+        strokeWeight: 4,
+        fillColor: "#000000",
+        fillOpacity: 0,
+    }).setMap(map);
+}
+
+function drawSimileTimeline() {
+    var eventSource = new Timeline.DefaultEventSource(0);
+
+    var theme = Timeline.ClassicTheme.create();
+    theme.event.bubble.width = 420;
+    theme.event.bubble.height = 120;
+    theme.event.instant.icon = "dull-brown-circle.png";
+    var d = Timeline.DateTime.parseGregorianDateTime("1870")
+    var bandInfos = [
+        Timeline.createBandInfo({
+            width:          "10%", 
+            intervalUnit:   Timeline.DateTime.DECADE, 
+            intervalPixels: 200,
+            date:           d,
+            showEventText:  false,
+            theme:          theme
+        }),
+        Timeline.createBandInfo({
+            width:          "90%", 
+            intervalUnit:   Timeline.DateTime.DECADE, 
+            intervalPixels: 200,
+            eventSource:    eventSource,
+            date:           d,
+            theme:          theme
+        })
+    ];
+
+    bandInfos[0].syncWith = 1;
+    bandInfos[0].highlight = false;
+
+    simile_timeline = Timeline.create(
+        document.getElementById("simile_timeline"),
+        bandInfos,
+        Timeline.HORIZONTAL);
+    simile_timeline.loadXML("timeline_data.xml", function(xml, url) {
+        eventSource.loadXML(xml, url);
+    });
+}
+
+function drawCityChart() {
     // remove previous sparklines
     var pub_chart = document.getElementById('pub_chart');
     while (pub_chart.childNodes.length > 0) {
@@ -222,12 +311,10 @@ function updateCurrCity(city) {
             },
         });
     }
-
-    updateCityInfo();
 }
 
-// update city info in right column
-function updateCityInfo() {
+function drawCityInfo() {
+    // update city info in right column
     var stats = null;
     for (var i = 0; i < statsByCity.length; i++) {
         if (statsByCity[i]["city"] == currentState.city &&
@@ -237,20 +324,19 @@ function updateCityInfo() {
     }
     if (stats != null) {
         $('#city_info').hide('slow', function() {
-        $('#city_info').html(
-            currentState.city + ", " + currentState.state + ", " +
-            currentState.yearRange.min + " - " +
-            currentState.yearRange.max + "</br>" +
-            "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
-            "Total Characters Scanned: " + stats["mTotal"] + "<br/>"
-            );
+            $('#city_info').html(
+                currentState.city + ", " + currentState.state + ", " +
+                currentState.yearRange.min + " - " +
+                currentState.yearRange.max + "</br>" +
+                "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
+                "Total Characters Scanned: " + stats["mTotal"] + "<br/>");
         });
         $('#city_info').show('slow');
     }
 
 }
 
-function updateMarkers(statsByCity) {
+function drawMarkers(statsByCity) {
     // clean up previous markers
     while (markers.length > 0) {
         var tmp = markers.pop();
@@ -331,22 +417,105 @@ function updateMarkers(statsByCity) {
     }
 }
 
+function drawColorRangeDisplay() {
+    var percentageMin = colorRampThreshold[currentState.colorRange.min];
+    var percentageMax = colorRampThreshold[currentState.colorRange.max] + 0.1;
+
+    percentageMin = (percentageMin * 100).toPrecision(3) + '%';
+    percentageMax = (percentageMax * 100).toPrecision(3) + '%';
+
+    $("#color_range_left").html(percentageMin);
+    $("#color_range_right").html(percentageMax);
+}
+
+/*****************************************************************************/
+// state transition and control functions
+/*****************************************************************************/
+// the update of year range and color range are done through sliders
+// so only here we need explicit update function
+function updateCity(city) {
+    // record newly updated city
+    currentState.city = city;
+    onCityChange();
+}
+
+function onCityChange() {
+    drawCityChart();
+    drawCityInfo();
+}
+
+function onYearRangechange() {
+    currentState.yearRange.min = timeline.getVisibleChartRange().start.getFullYear();
+    currentState.yearRange.max = timeline.getVisibleChartRange().end.getFullYear();
+
+    drawCityInfo();
+    drawMarkers(statsByCity);
+    setSimileCenterYear('' +
+        Math.round((currentState.yearRange.min +
+                    currentState.yearRange.max) / 2));
+}
+
+function onColorRangeChange() {
+    // record updated color range
+    var range = $( "#legend_slider" ).slider("values");
+    currentState.colorRange.min = range[0];
+    currentState.colorRange.max = range[1];
+
+    drawColorRangeDisplay();
+
+    // update markers, keeping only those with color in range
+    drawMarkers(statsByCity);
+}
+
+
+/****************************************************************************/
+// utility functions
+/****************************************************************************/
+function yearInRange(year) {
+    // currently only work on SIMILE timeline
+    var inRange = false;
+    if (parseInt(year) >= parseInt(currentState.yearRange.min) &&
+        parseInt(year) <= parseInt(currentState.yearRange.max)) {
+        inRange = true;
+    }
+    return inRange;
+}
+
 function addMarkerListener(marker) {
     google.maps.event.addListener(marker, "click", function() {
-        updateCurrCity(marker.city);
-        updateMarkers(statsByCity);
+        updateCity(marker.city);
+        drawMarkers(statsByCity);
     });
 }
 
-/**
- *  convert data from
- *      pub, city, year, ...
- *  to
- *      pub, city, trend[year], ...
- */
-function getTrendByYear(statsByPub, minYear, maxYear) {
-    var result = {};
+function onResize() {
+    if (simile_resizeTimerID == null) {
+        simile_resizeTimerID = window.setTimeout(function() {
+            simile_resizeTimerID = null;
+            simile_timeline.layout();
+        }, 500);
+    }
+}
 
+function setSimileCenterYear(date) {
+    simile_timeline.getBand(0).setCenterVisibleDate(new Date(date, 0, 1));
+}
+
+function getSimileCenterYear() {
+    alert(simile_timeline.getBand(0).getCenterVisibleDate());
+}
+
+function switchSimileTheme(){
+    var timeline = document.getElementById('simile_timeline');
+    timeline.className = (timeline.className.indexOf('dark-theme') != -1) ?
+                         timeline.className.replace('dark-theme', '') :
+                         timeline.className += ' dark-theme';
+}
+
+function getTrendByYear(statsByPub, minYear, maxYear) {
+    //  convert data from   pub, city, year, ...
+    //  to                  pub, city, trend[year], ...
+    var result = {};
     for (var i = 0; i < statsByPub.length; i++) {
         var pubName = statsByPub[i]["pub"];
         if (result[pubName] == null) {
@@ -356,159 +525,19 @@ function getTrendByYear(statsByPub, minYear, maxYear) {
             result[pubName]["lat"] = statsByPub[i]["lat"];
             result[pubName]["lng"] = statsByPub[i]["lng"];
             result[pubName]["goodPercent"] = new Array();
-
-            result[pubName]["goodPercent"][maxYear-minYear] = null;  // force to length
+            // force length to the entire year range
+            result[pubName]["goodPercent"][maxYear-minYear] = null;
         }
 
-        var yearOffset = statsByPub[i]["year"] - minYear;
-
         // record mGood / mTotal to the year
+        var yearOffset = statsByPub[i]["year"] - minYear;
         result[pubName]["goodPercent"][yearOffset] =
             parseFloat(statsByPub[i]["mGood"]) /
             parseFloat(statsByPub[i]["mTotal"]);
     }
-
     return result;
 }
 
-function drawLegend() {
-    drawColorLegend();
-    drawSizeLegend();
-}
-
-function drawColorLegend() {
-    var canvas = document.getElementById('legend_color_canvas');
-    if (canvas.getContext) {
-        var ctx = canvas.getContext('2d');
- 
-        var x = 0;
-        var y = 0;
-        var s = Math.round(canvas.width / colorRamp.length) - 1;
-        for (var i = 0; i < colorRamp.length; i++) {
-            ctx.fillStyle = colorRamp[i];
-            ctx.fillRect(x + i * s, y, s, s);
-        }
-            
-        $( "#legend_slider").slider({
-            orientation: "horizontal",
-            max: colorRamp.length - 1,
-            range: true,
-            values: [0, colorRamp.length - 1],
-            step: 1,
-            change: onColorRangeChange,
-        });
-
-        onColorRangeChange();
-    }
-    else {
-        alert('need better browser');
-    }
-}
-
-function onColorRangeChange() {
-    // record updated color range
-    var range = $( "#legend_slider" ).slider("values");
-    currentState.colorRange.min = range[0];
-    currentState.colorRange.max = range[1];
-
-    // update display
-    var percentageMin = colorRampThreshold[currentState.colorRange.min];
-    var percentageMax = colorRampThreshold[currentState.colorRange.max] + 0.1;
-    percentageMin = (percentageMin * 100).toPrecision(3) + '%';
-    percentageMax = (percentageMax * 100).toPrecision(3) + '%';
-    $("#color_range_left").html(percentageMin);
-    $("#color_range_right").html(percentageMax);
-
-    // update markers, keeping only those with color in range
-    updateMarkers(statsByCity);
-}
-
-function drawSizeLegend() {
-    var canvas = document.getElementById('legend_size_canvas');
-    if (canvas.getContext) {
-        var r = Math.min(canvas.width, canvas.height) / 2;
-
-        var ctx = canvas.getContext('2d');
-        ctx.beginPath();
-        ctx.arc(r, r, r, 0, 2 * Math.PI, true);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(r, 2*r-0.3*r, 0.3*r, 0, 2 * Math.PI, true);
-        ctx.stroke();
-    }
-}
-
-function addContour(map) {
-    var c = [];
-    for (var i = 0; i < config.contour.length; i++) {
-        c.push(new google.maps.LatLng(config.contour[i][0], config.contour[i][1]));
-    }
-
-    new google.maps.Polygon({
-        paths: c,
-        strokeColor: "#666666",
-        strokeOpacity: 0.6,
-        strokeWeight: 4,
-        fillColor: "#000000",
-        fillOpacity: 0,
-    }).setMap(map);
-}
-
-function initSimileTimeline() {
-    var eventSource = new Timeline.DefaultEventSource(0);
-
-    var theme = Timeline.ClassicTheme.create();
-    theme.event.bubble.width = 420;
-    theme.event.bubble.height = 120;
-    theme.event.instant.icon = "dull-brown-circle.png";
-    var d = Timeline.DateTime.parseGregorianDateTime("1870")
-    var bandInfos = [
-        Timeline.createBandInfo({
-            width:          "10%", 
-            intervalUnit:   Timeline.DateTime.DECADE, 
-            intervalPixels: 200,
-            date:           d,
-            showEventText:  false,
-            theme:          theme
-        }),
-        Timeline.createBandInfo({
-            width:          "90%", 
-            intervalUnit:   Timeline.DateTime.DECADE, 
-            intervalPixels: 200,
-            eventSource:    eventSource,
-            date:           d,
-            theme:          theme
-        })
-    ];
-
-    bandInfos[0].syncWith = 1;
-    bandInfos[0].highlight = false;
-
-    simile_timeline = Timeline.create(document.getElementById("simile_timeline"), bandInfos, Timeline.HORIZONTAL);
-    simile_timeline.loadXML("timeline_data.xml", function(xml, url) {
-        eventSource.loadXML(xml, url);
-    });
-}
-function switchSimileTheme(){
-    var timeline = document.getElementById('simile_timeline');
-    timeline.className = (timeline.className.indexOf('dark-theme') != -1) ?
-                         timeline.className.replace('dark-theme', '') :
-                         timeline.className += ' dark-theme';
-}
-function onResize() {
-    if (simile_resizeTimerID == null) {
-        simile_resizeTimerID = window.setTimeout(function() {
-            simile_resizeTimerID = null;
-            simile_timeline.layout();
-        }, 500);
-    }
-}
-function setSimileCenterYear(date) {
-    simile_timeline.getBand(0).setCenterVisibleDate(new Date(date, 0, 1));
-}
-function getSimileCenterYear() {
-    alert(simile_timeline.getBand(0).getCenterVisibleDate());
-}
 </script>
 
 </head>
