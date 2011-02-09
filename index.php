@@ -137,6 +137,7 @@ function onRangechange() {
 
     updateCityInfo();
     updateMarkers(statsByCity);
+    setSimileCenterYear('' + Math.round((currentState.yearRange.min + currentState.yearRange.max) / 2));
 }
 
 function yearInRange(year) {
@@ -488,7 +489,7 @@ function initSimileTimeline() {
         eventSource.loadXML(xml, url);
     });
 }
-function themeSwitch(){
+function switchSimileTheme(){
     var timeline = document.getElementById('simile_timeline');
     timeline.className = (timeline.className.indexOf('dark-theme') != -1) ?
                          timeline.className.replace('dark-theme', '') :
@@ -502,14 +503,12 @@ function onResize() {
         }, 500);
     }
 }
-function setDate(date) {
-	 simile_timeline.getBand(0).setCenterVisibleDate(new Date(date, 0, 1));
+function setSimileCenterYear(date) {
+    simile_timeline.getBand(0).setCenterVisibleDate(new Date(date, 0, 1));
 }
-function getCenter() {
-	 alert(simile_timeline.getBand(0).getCenterVisibleDate());
+function getSimileCenterYear() {
+    alert(simile_timeline.getBand(0).getCenterVisibleDate());
 }
-
-
 </script>
 
 </head>
@@ -574,9 +573,9 @@ function getCenter() {
   <!-- SIMILE timeline -->
   <div>
     <div id="simile_timeline" class="timeline-default" style="height: 400px;"></div>
-    <button onClick="setDate('1890');">set date to 1890</button>
-    <button onClick="getCenter()">get currently viewed date</button>
-    <button onclick="themeSwitch();">Switch theme</button> 
+    <button onClick="setSimileCenterYear('1890');">set date to 1890</button>
+    <button onClick="getSimileCenterYear()">get currently viewed date</button>
+    <button onclick="switchSimileTheme();">Switch theme</button> 
     <script type="text/javascript">
         var timeline = document.getElementById('simile_timeline');
         timeline.className += ' dark-theme';
