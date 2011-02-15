@@ -22,12 +22,19 @@
 }
 
 #leftcolumn {
-    width: 40%;
-    float: left;
+    width: 35%;
+    position: absolute;
+    left: 20px;
+    margin: 10px;
+    border: 5px groove orange;
+    padding: 10px;
+    background: rgb(255, 255, 255);
+    background: rgba(255, 255, 255, 0.6);
+    z-index: 20;
 }
 
 #centercolumn {
-    width: 45%;
+    width: 85%;
     float: left;
 }
 
@@ -43,8 +50,8 @@
 
 #pub_chart {
     overflow: auto;
+    height: 320px;
     width: 100%;
-    height: 420px;
 }
 
 #simile_timeline {
