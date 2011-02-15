@@ -14,6 +14,8 @@
 <script type="text/javascript" src="http://api.simile-widgets.org/timeline/2.3.1/timeline-api.js"></script> 
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.8/jquery-ui.min.js"></script>
+<script type="text/javascript" src="http://vis.stanford.edu/protovis/protovis-r3.2.js"></script>
+
 <link rel="stylesheet" type="text/css" href="http://www.simile-widgets.org/timeline/examples/styles.css"/> 
 <link type="text/css" rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.8/themes/base/jquery-ui.css">
 <link rel="stylesheet" type="text/css" href="timeline_style.css"/> 
@@ -280,16 +282,17 @@ function drawCityChart() {
     while (pub_chart.childNodes.length > 0) {
         pub_chart.removeChild(pub_chart.firstChild);
     }
-
+	var jsonObj = {};
     // add sparklines for publications
     var bgColors = ['#ffffff', '#eeeeee'];
     var idx = 0;
+ 
     var numYears = maxYear - minYear + 1; 
     for (var k in pubTrendByYear) {
         if (pubTrendByYear[k]['city'] != currentState.city) {
             continue;
         }
-
+		jsonObj[k] =  new Array();
         // prepare data
         var data = new google.visualization.DataTable();
         data.addColumn('string', 'Year');
@@ -297,6 +300,7 @@ function drawCityChart() {
         data.addRows(numYears);
 
         var goodPercent = pubTrendByYear[k]["goodPercent"];
+        console.log(goodPercent);
         for (var i = 0; i < numYears; i++) {
             if (isNaN(goodPercent[i])) {
                 goodPercent[i] = 0;
@@ -304,6 +308,7 @@ function drawCityChart() {
             var strYear = "" + (i + minYear);
             data.setValue(i, 0, strYear);
             data.setValue(i, 1, goodPercent[i]);
+            jsonObj[k].push({year: strYear, percentGood: goodPercent[i]});
         }
 
         // add DIV element for pub title
@@ -312,38 +317,88 @@ function drawCityChart() {
             '<a href="http://west.stanford.edu">' +
             pubTrendByYear[k]['pub'] +
             '</a>';
-        pub_chart.appendChild(title_div);
 
         // add new DIV element for chart
         var chart_div = document.createElement('div');
-        chart_div.id = 'pub_chart_div' + k;
+        chart_div.id = 'area';
+        $("#pub_char").html("");
         pub_chart.appendChild(chart_div);
 
+		minyear = 1829;
+		var dateFormat = pv.Format.date("%y");
+		for (newspaper in jsonObj) {
+
+			jsonObj[newspaper].forEach(function(d) {
+				var mySplitResult = d.year.toString().split(" ");
+				var year = d.year;
+				
+				if (mySplitResult.length > 1) {
+					year = mySplitResult[3]
+				} 
+				return d.year = dateFormat.parse(year);
+			});
+
+		}
+		var counter = 0;
+		
+		var w = 350,
+		    h = 170,
+		   x = pv.Scale.linear(dateFormat.parse("1829"),dateFormat.parse("2010")).range(0, w),
+		    y = pv.Scale.linear(0, 1).range(0, h);
+		
+		/* The root panel. */
+		var vis = new pv.Panel().width(w).height(h).bottom(20).left(20).right(10).top(5).canvas('area');
+		
+		/* Y-axis and ticks. */
+		vis.add(pv.Rule).data(y.ticks(5)).bottom(y).strokeStyle(function (d) { if (d) { return "#eee"; } else { return "#000"; } }).anchor("left").add(pv.Label).text(y.tickFormat);
+		
+		/* X-axis and ticks. */
+		vis.add(pv.Rule).data(x.ticks()).visible(function (d) { return d; }).left(x).bottom(-5).height(5).anchor("bottom").add(pv.Label).text(x.tickFormat);
+
+		for (newspapert in jsonObj) {
+			
+			console.log(jsonObj[newspapert]);
+			eval("var panel"+ counter + " = vis.add(pv.Panel).def('i', -1);");
+		
+			eval("panel"+counter+".add(pv.Area).data(jsonObj['"+newspapert+"']).bottom(1).left(function (d) { return x(d.year); }).height(function (d) { return y(d.percentGood); }).event('mouseover', function () { panel"+counter+".i(10); this.render(); return panel100.x("+counter+"); }).event('mouseout', function () { 		    panel"+counter+".i(-1); this.render(); return panel100.x(-1);	}).fillStyle(function (d, p) { if (panel"+counter+".i() < 0) { return 'rgba(238, 238, 238, 0.00001)'; } else { return '#003366'; } }).anchor('top').add(pv.Line).lineWidth(function (d, p) { if (panel"+counter+".i() < 0) { return 0.5; } else { return 1; }});");
+		counter++;
+			
+			
+		}
+		
+
+		// Make the square buttons
+		var selected = 0;
+		var panel100 = vis.add(pv.Panel).def("x", -1); 
+		panel100.add(pv.Bar)
+		
+		.data(pv.keys(jsonObj)).right(320).event("mouseover", function (d) {
+		        panel100.x(this.index);
+		        this.render();
+		        //alert(this.index);
+		   		return eval("panel" + this.index + ".i(10)");
+		}).event("mouseout", function (d) {
+		        panel100.x(-1);
+		        this.render();
+		        // alert(this.index);
+				return eval("panel" + this.index + ".i(-1)");
+		
+		}).bottom(function () { return (10 + this.index * 18) }).fillStyle(function (d, p) {
+		
+		    if (panel100.x() == this.index) {
+		        return "rgba(44,101,160, 1)";
+		    } else {
+		        return "rgba(238, 238, 238, 1)";
+		    }
+		}).width(20).height(12).anchor("right").add(pv.Label).textMargin(6).textAlign("left");
+
+		vis.render();
+		
         // draw chart
-        var chart = new google.visualization.LineChart(chart_div);
-        var bgColor = bgColors[idx % 2]; // specify background color
+        //var chart = new google.visualization.LineChart(chart_div);
+        //var bgColor = bgColors[idx % 2]; // specify background color
         idx++;
-        chart.draw(data, {
-            backgroundColor: bgColor,
-            gridlineColor: bgColor,
-            chartArea: {
-                left: 20,
-                top: 0,
-                width: '80%',
-                height: 15,
-            },
-            height: 30,
-            lineWidth: 1,
-            colors: [colorRamp[Math.floor(colorRamp.length / 2)]],
-            hAxis: {
-                textPosition: 'out',
-                showTextEvery: 59,
-            },
-            vAxis: {
-                textPosition: 'none',
-            },
-        });
-    }
+      }
 }
 
 function drawCityInfo() {
