@@ -130,10 +130,19 @@ function drawMap() {
     var myLatlng = new google.maps.LatLng(
         config.map.center.lat,
         config.map.center.lng);
+
     var myOptions = {
       zoom: config.map.initialZoom,
       center: myLatlng,
       mapTypeId: google.maps.MapTypeId.TERRAIN,
+      mapTypeControl: false,
+      streetViewControl: false,
+      panControlOptions: {
+          position: google.maps.ControlPosition.TOP_RIGHT,
+      },
+      zoomControlOptions: {
+          position: google.maps.ControlPosition.TOP_RIGHT,
+      },
     };
 
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
@@ -179,18 +188,35 @@ function drawColorLegend() {
 }
 
 function drawSizeLegend() {
-    var canvas = document.getElementById('legend_size_canvas');
+    if ($('#legend_size').children().length > 0) {
+        $('#legend_size').children().remove();
+    }
+    drawSizeLegendSingle(1000000);
+    drawSizeLegendSingle(10000000);
+}
+
+function drawSizeLegendSingle(total) {
+    var element = $('<div></div>');
+    $('#legend_size').append(element);
+
+    var canvasId = 'legend_size_' + total;
+    element.append($('<canvas width="80" height="80" id="' +
+                     canvasId + '"></canvas>'));
+    var canvas = document.getElementById(canvasId);
     if (canvas.getContext) {
-        var r = Math.min(canvas.width, canvas.height) / 2;
+        // TODO
+        var r = getMarkerSize(total, currentState.markerSizeScale) / 2;
+        r = Math.round(r / Math.pow(2, 6));
+
+        //alert(r);
 
         var ctx = canvas.getContext('2d');
         ctx.beginPath();
         ctx.arc(r, r, r, 0, 2 * Math.PI, true);
         ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(r, 2*r-0.3*r, 0.3*r, 0, 2 * Math.PI, true);
-        ctx.stroke();
     }
+
+    element.append($('<p></p>').html(total));
 }
 
 function drawContour(map) {
@@ -326,7 +352,11 @@ function drawCityInfo() {
     for (var i = 0; i < statsByCity.length; i++) {
         if (statsByCity[i]["city"] == currentState.city &&
             yearInRange(statsByCity[i]["year"])) {
-            stats = statsByCity[i];
+            if (stats == null) {
+                stats = {mGood: 0, mTotal: 0};
+            }
+            stats["mGood"] += parseInt(statsByCity[i]["mGood"]);
+            stats["mTotal"] += parseInt(statsByCity[i]["mTotal"]);
         }
     }
     if (stats != null) {
@@ -404,11 +434,7 @@ function drawMarkers(statsByCity) {
         }
 
         // scale marker size according to current select
-        var radius = Math.ceil(total / 2000);
-        if (currentState.markerSizeScale == 'log') {
-            radius = Math.log(total) * 2000;
-        }
-
+        var radius = getMarkerSize(total, currentState.markerSizeScale);
         marker = new google.maps.Circle({
             center: loc,
             map: map,
@@ -554,6 +580,14 @@ function getTrendByYear(statsByPub, minYear, maxYear) {
     return result;
 }
 
+function getMarkerSize(total, scaleMethod) {
+    var radius = Math.log(total) * 2000;
+    if (scaleMethod == 'linear') {
+        radius = Math.ceil(total / 2000);
+    }
+    return radius;
+}
+
 </script>
 
 </head>
@@ -598,20 +632,11 @@ function getTrendByYear(statsByPub, minYear, maxYear) {
           .
         </div>
       </div>
-
       <br/> <br/>
-
       <!-- size legend -->
-      <div>
-        <div>
-          <canvas id="legend_size_canvas" width="50" height="50"></canvas>
-        </div>
-        <div>
-          <div id="legend_size_content">
-          numbers here
-          </div>
-        </div>
-      </div>
+      <div id="legend_size"></div>
+      <br/> <br/>
+      <!-- scale selector -->
       <div>
         <form><select id="scale_select">
           <option>log</option>

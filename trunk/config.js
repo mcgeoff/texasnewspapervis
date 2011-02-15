@@ -1,13 +1,13 @@
 
 var config = {
-    title: 'Texas Newspaper Collection',
-    subTitle: 'subtitle to be configured in <a href="config.js">config.js</a>',
+    title: 'Examining OCR Quality',
+    subTitle: 'Scans of Texas Newspapers, 1829-2008',
     introText:'introductory text goes here, to be configured in <a href="config.js">config.js</a>',
 
     map: {
         center: {
             lat: 32.20,
-            lng: -99.00
+            lng: -104.00
         },
         initialZoom: 6,
     },
