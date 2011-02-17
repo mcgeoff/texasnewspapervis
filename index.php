@@ -79,11 +79,6 @@ $(document).ready(function () {
     drawMap();
     drawTimeline();
     drawSimileTimeline();
-
-    $('#scale_select').change(function () {
-        currentState.markerSizeScale = $('#scale_select').val();
-        onMarkerSizeScaleChange();
-    });
 });
 
 /*****************************************************************************/
@@ -159,6 +154,11 @@ function drawMap() {
 function drawLegend() {
     drawColorLegend();
     drawSizeLegend();
+
+    $('input[name=scale_select]').change(function () {
+        currentState.markerSizeScale = $('input[name=scale_select]:checked').val();
+        onMarkerSizeScaleChange();
+    });
 }
 
 function drawColorLegend() {
@@ -194,9 +194,46 @@ function drawSizeLegend() {
     if ($('#legend_size').children().length > 0) {
         $('#legend_size').children().remove();
     }
-    //alert('hehe');
-    drawSizeLegendSingle(10000000);
-    drawSizeLegendSingle(100000000);
+
+    var element = $('<div></div>');
+    $('#legend_size').append(element);
+    var canvasId = 'legend_size_canvas';
+    element.append($('<canvas id="' + canvasId + '"></canvas>'));
+    var canvas = document.getElementById(canvasId);
+    if (canvas.getContext) {
+        var ns = 1000000;
+        var nl = 100000000;
+        var rs = getMarkerSize(ns, currentState.markerSizeScale);
+        var rl = getMarkerSize(nl, currentState.markerSizeScale);
+        var m = 1;  // margin
+        canvas.width  = (rl + m) * 4;
+        canvas.height = (rl + m) * 2;
+
+        var ctx = canvas.getContext('2d');
+        ctx.beginPath();
+        ctx.arc(rl, rl, rl, 0, 2 * Math.PI, true);
+        ctx.fillStyle = colorRamp[colorRamp.length - 1];
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(rl, 2 * rl - rs, rs, 0, 2 * Math.PI, true);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(rl, m);
+        ctx.lineTo(2.5 * rl, m);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(rl, 2 * rl - 2 * rs);
+        ctx.lineTo(2.5 * rl, 2 * rl - 2 * rs);
+        ctx.stroke();
+
+        //ctx.fillStyle = '#000000';
+        ctx.strokeText(shorterNumber(nl), 2.5 * rl, 8);
+        ctx.strokeText(shorterNumber(ns), 2.5 * rl, 2 * rl - 2 * rs + 8);
+    }
 }
 
 function drawSizeLegendSingle(total) {
@@ -210,8 +247,6 @@ function drawSizeLegendSingle(total) {
         var r = getMarkerSize(total, currentState.markerSizeScale);
         canvas.width = (r+2) * 2;
         canvas.height = (r+2) * 2;
-
-        //alert(r);
 
         var ctx = canvas.getContext('2d');
         ctx.beginPath();
@@ -301,7 +336,6 @@ function drawCityChart() {
         data.addRows(numYears);
 
         var goodPercent = pubTrendByYear[k]["goodPercent"];
-        //alert(k);
         for (var i = 0; i < numYears; i++) {
             if (isNaN(goodPercent[i])) {
                 goodPercent[i] = 0;
@@ -523,9 +557,6 @@ function drawMarkers(statsByCity) {
 
             // draw circle according to size and color from data
             var ctx = canvas.getContext('2d');
-        console.log(i);
-        console.log(r);
-        console.log(ctx);
             ctx.globalAlpha = 0.5;
             ctx.fillStyle = color;
             ctx.arc(r, r, rs, 0, Math.PI * 2);
@@ -541,7 +572,7 @@ function drawMarkers(statsByCity) {
 
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 1;
-            ctx.strokeText(r, r - 4, r + 4);
+            ctx.strokeText(shorterNumber(total), r - 8, r + 4);
         }
 
         // create the marker image
@@ -700,6 +731,23 @@ function getMarkerSize(total, scaleMethod) {
     return Math.max(5, radius);  // assign minimum
 }
 
+function shorterNumber(n) {
+    var s = '';
+    if (n >= 1000000000) {
+        s = Math.floor(n / 1000000000) + 'B';
+    }
+    else if (n >= 1000000) {
+        s = Math.floor(n / 1000000) + 'M';
+    }
+    else if (n >= 1000) {
+        s = Math.floor(n / 1000) + 'K';
+    }
+    else {
+        s = n;
+    }
+    return s;
+}
+
 </script>
 
 </head>
@@ -744,17 +792,17 @@ function getMarkerSize(total, scaleMethod) {
           .
         </div>
       </div>
-      <br/> <br/>
-      <!-- size legend -->
-      <div id="legend_size"></div>
-      <br/> <br/>
+      <br/>
+      <p>Number of words scanned with scaling:</p>
       <!-- scale selector -->
       <div>
-        <form><select id="scale_select">
-          <option>log</option>
-          <option>linear</option>
-        </select></form>
+        <form>
+          <input type="radio" name="scale_select" value="log" checked="checked">Log
+          <input type="radio" name="scale_select" value="linear">Linear
+        </form>
       </div>
+      <!-- size legend -->
+      <div id="legend_size"></div>
     </div>
   </div>
 
