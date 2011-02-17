@@ -31,6 +31,7 @@ var statsByPub  = <?php getStatsByPub(); ?>;
 var statsByCity = <?php getStatsByCity(); ?>;
 var statsByYear = <?php getStatsByYear(); ?>;
 
+
 var minYear = config.yearRange.min;
 var maxYear = config.yearRange.max;
 
@@ -93,9 +94,9 @@ function drawTitleBlock() {
     // add generate title block accordingly
     var title_div = $("#title_block");
 
-    title_div.append($('<h1>' + config.title + '</h1>'));
-    title_div.append($('<h3>' + config.subTitle + '</h3>'));
-    title_div.append($('<p>' + config.introText + '</p>'))
+    title_div.append($('<div class="content"><h1>' + config.title + '</h1></div>'));
+    title_div.append($('<div class="content"><h3>' + config.subTitle + '</h3></div>'));
+    title_div.append($('<div class="content"><p>' + config.introText + '</p></div>'))
 }
 
 function drawTimeline() {
@@ -275,7 +276,7 @@ function drawSimileTimeline() {
         eventSource.loadXML(xml, url);
     });
 }
-
+   
 function drawCityChart() {
     // remove previous sparklines
     var pub_chart = document.getElementById('pub_chart');
@@ -300,7 +301,7 @@ function drawCityChart() {
         data.addRows(numYears);
 
         var goodPercent = pubTrendByYear[k]["goodPercent"];
-        console.log(goodPercent);
+        //alert(k);
         for (var i = 0; i < numYears; i++) {
             if (isNaN(goodPercent[i])) {
                 goodPercent[i] = 0;
@@ -317,9 +318,11 @@ function drawCityChart() {
             '<a href="http://west.stanford.edu">' +
             pubTrendByYear[k]['pub'] +
             '</a>';
+        //pub_chart.appendChild(title_div);
 
         // add new DIV element for chart
         var chart_div = document.createElement('div');
+        //chart_div.id = 'pub_chart_div' + k;
         chart_div.id = 'area';
         $("#pub_char").html("");
         pub_chart.appendChild(chart_div);
@@ -327,7 +330,7 @@ function drawCityChart() {
 		minyear = 1829;
 		var dateFormat = pv.Format.date("%y");
 		for (newspaper in jsonObj) {
-
+			//alert(newspaper);
 			jsonObj[newspaper].forEach(function(d) {
 				var mySplitResult = d.year.toString().split(" ");
 				var year = d.year;
@@ -341,9 +344,11 @@ function drawCityChart() {
 		}
 		var counter = 0;
 		
-		var w = 350,
+		
+		//console.log(jsonObj);
+		var w = 400,
 		    h = 170,
-		   x = pv.Scale.linear(dateFormat.parse("1829"),dateFormat.parse("2010")).range(0, w),
+		   x = pv.Scale.linear(dateFormat.parse("1700"),dateFormat.parse("2010")).range(0, w),
 		    y = pv.Scale.linear(0, 1).range(0, h);
 		
 		/* The root panel. */
@@ -354,43 +359,67 @@ function drawCityChart() {
 		
 		/* X-axis and ticks. */
 		vis.add(pv.Rule).data(x.ticks()).visible(function (d) { return d; }).left(x).bottom(-5).height(5).anchor("bottom").add(pv.Label).text(x.tickFormat);
+		
+		vis.add(pv.Panel)
+    .events("all")
+    .event("mousedown", pv.Behavior.pan())
+    .event("mousewheel", pv.Behavior.zoom())
+    .event("pan", transform)
+    .event("zoom", transform);
+
+/** Update the x- and y-scale domains per the new transform. */
+function transform() {
+  var t = this.transform().invert();
+  var mx = x.invert(vis.mouse().x);
+  var y = mx.toString().split(" ")[3];
+  console.log("one" + t.x / w);
+  console.log("two" + (parseFloat((t.k + t.x / w)*10000) - 10000));
+ //console.log(t.k +"," + t.x + "," + t.y);
+  x.domain(dateFormat.parse(Math.round(parseInt(y) + 10 +  (parseFloat((t.k + t.x / w)*10000) - 10000)).toString()),dateFormat.parse(Math.round(parseInt(y) - 10 - (parseFloat((t.k + t.x / w)*10000) - 10000)).toString()));
+  //y.domain(t.y / h * 2 * ky - ky, (t.k + t.y / h) * 2 * ky - ky);
+  vis.render();
+}
 
 		for (newspapert in jsonObj) {
 			
-			console.log(jsonObj[newspapert]);
+			//console.log(jsonObj[newspapert]);
 			eval("var panel"+ counter + " = vis.add(pv.Panel).def('i', -1);");
 		
-			eval("panel"+counter+".add(pv.Area).data(jsonObj['"+newspapert+"']).bottom(1).left(function (d) { return x(d.year); }).height(function (d) { return y(d.percentGood); }).event('mouseover', function () { panel"+counter+".i(10); this.render(); return panel100.x("+counter+"); }).event('mouseout', function () { 		    panel"+counter+".i(-1); this.render(); return panel100.x(-1);	}).fillStyle(function (d, p) { if (panel"+counter+".i() < 0) { return 'rgba(238, 238, 238, 0.00001)'; } else { return '#003366'; } }).anchor('top').add(pv.Line).lineWidth(function (d, p) { if (panel"+counter+".i() < 0) { return 0.5; } else { return 1; }});");
+			eval("panel"+counter+".add(pv.Area).data(jsonObj[newspapert]).bottom(1).left(function (d) { return x(d.year); }).height(function (d) { return y(d.percentGood); }).event('mouseover', function () { panel"+counter+".i(10); this.render(); return panel100.x("+counter+"); }).event('mouseout', function () { 		    panel"+counter+".i(-1); this.render(); return panel100.x(-1);	}).fillStyle(function (d, p) { if (panel"+counter+".i() < 0) { return 'rgba(238, 238, 238, 0.00001)'; } else { return '"+config.pvcolorRamp[counter]+"'; } }).anchor('top').add(pv.Line).strokeStyle(function() { return '" + config.pvcolorRamp[counter]+ "'; }).lineWidth(function (d, p) { if (panel"+counter+".i() < 0) { return 0.5; } else { return 1; }});");
 		counter++;
 			
 			
 		}
 		
+		
+		
 
-		// Make the square buttons
-		var selected = 0;
-		var panel100 = vis.add(pv.Panel).def("x", -1); 
-		panel100.add(pv.Bar)
-		
-		.data(pv.keys(jsonObj)).right(320).event("mouseover", function (d) {
-		        panel100.x(this.index);
-		        this.render();
-		        //alert(this.index);
-		   		return eval("panel" + this.index + ".i(10)");
-		}).event("mouseout", function (d) {
-		        panel100.x(-1);
-		        this.render();
-		        // alert(this.index);
-				return eval("panel" + this.index + ".i(-1)");
-		
-		}).bottom(function () { return (10 + this.index * 18) }).fillStyle(function (d, p) {
-		
-		    if (panel100.x() == this.index) {
-		        return "rgba(44,101,160, 1)";
-		    } else {
-		        return "rgba(238, 238, 238, 1)";
-		    }
-		}).width(20).height(12).anchor("right").add(pv.Label).textMargin(6).textAlign("left");
+////////////////////////////////////////////////////////////////////
+var selected = 0;
+var panel100 = vis.add(pv.Panel).def("x", -1); /* Antibiotic legend. */
+panel100.add(pv.Bar)
+
+.data(pv.keys(jsonObj)).right(370).event("mouseover", function (d) {
+        panel100.x(this.index);
+        this.render();
+        //alert(this.index);
+   		return eval("panel" + this.index + ".i(10)");
+}).event("mouseout", function (d) {
+        panel100.x(-1);
+        this.render();
+        // alert(this.index);
+		return eval("panel" + this.index + ".i(-1)");
+
+}).bottom(function () { return (10 + this.index * 18) }).fillStyle(function (d, p) {
+
+    if (panel100.x() == this.index) {
+        return config.pvcolorRamp[this.index];
+    } else {
+        return "rgba(238, 238, 238, 1)";
+    }
+}).width(20).height(12).anchor("right").add(pv.Label).textMargin(6).textAlign("left");
+
+
 
 		vis.render();
 		
@@ -417,7 +446,7 @@ function drawCityInfo() {
     if (stats != null) {
         $('#city_info').hide('slow', function() {
             $('#city_info').html(
-                currentState.city + ", " + currentState.state + ", " +
+                "<span id='cityname'>" + currentState.city + ", " + currentState.state + "</span>, " +
                 currentState.yearRange.min + " - " +
                 currentState.yearRange.max + "<br/>" +
                 "Good Characters Scanned: " + stats["mGood"] + "<br/>" +

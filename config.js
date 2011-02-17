@@ -26,6 +26,23 @@ var config = {
         '#fed98e',
         '#ffffcc',  // highest good / total
     ],
+    pvcolorRamp: [
+        '#993404',  // lowest good / total
+        '#d95f0e',
+        '#fe9929',
+        '#fed98e',
+        '#ffffcc',  // highest good / total
+        '#993404',  // lowest good / total
+        '#d95f0e',
+        '#fe9929',
+        '#fed98e',
+        '#ffffcc',  // highest good / total
+        '#993404',  // lowest good / total
+        '#d95f0e',
+        '#fe9929',
+        '#fed98e',
+        '#ffffcc',  // highest good / total
+    ],
     colorRampThreshold: [
         0.5,
         0.6,
