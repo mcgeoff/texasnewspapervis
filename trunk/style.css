@@ -5,15 +5,20 @@
     left: 0px;
     width: 100%;
     margin-bottom: 10px;
-    background-color: #cccccc;
+    background-color: #fff;
 }
+h1 { font-size:30px !important;font-family: 'Goudy Bookletter 1911', arial, serif; }
 
 #title_block {
     float: left;
     left: 5px;
     width: 40%;
+ 
 }
 
+#title_block .content {
+	   padding-left:10px;
+}
 #timeline_vis {
     float: left;
     left: 15px;
@@ -29,7 +34,7 @@
     border: 5px groove orange;
     padding: 10px;
     background: rgb(255, 255, 255);
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 1);
     z-index: 20;
 }
 
@@ -53,13 +58,23 @@
     height: 320px;
     width: 100%;
 }
+#rightarrow {
+	width:33px;
+	height:66px;
+	position:absolute;
+	top:160px;
+	left:100%;
+	background:url(rightarrow.png);
+}
 
 #simile_timeline {
     font-family: Trebuchet MS, Helvetica, Arial, sans serif;
     font-size: 8pt;
     border: 1px solid #aaa;
 }
-    
+    #cityname {
+    font-size:20px;	
+    }
 #legend_slider {
     float: left;
     clear: left;
