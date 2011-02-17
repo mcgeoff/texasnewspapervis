@@ -157,7 +157,10 @@ function drawLegend() {
 
     $('input[name=scale_select]').change(function () {
         currentState.markerSizeScale = $('input[name=scale_select]:checked').val();
-        onMarkerSizeScaleChange();
+        $('#legend_size').fadeOut('slow', function() {
+            onMarkerSizeScaleChange();
+        });
+        $('#legend_size').fadeIn('slow');
     });
 }
 
