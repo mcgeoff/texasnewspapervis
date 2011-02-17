@@ -195,8 +195,8 @@ function drawSizeLegend() {
         $('#legend_size').children().remove();
     }
     //alert('hehe');
-    drawSizeLegendSingle(10000);
-    drawSizeLegendSingle(100000);
+    drawSizeLegendSingle(10000000);
+    drawSizeLegendSingle(100000000);
 }
 
 function drawSizeLegendSingle(total) {
@@ -523,6 +523,9 @@ function drawMarkers(statsByCity) {
 
             // draw circle according to size and color from data
             var ctx = canvas.getContext('2d');
+        console.log(i);
+        console.log(r);
+        console.log(ctx);
             ctx.globalAlpha = 0.5;
             ctx.fillStyle = color;
             ctx.arc(r, r, rs, 0, Math.PI * 2);
@@ -692,9 +695,9 @@ function getTrendByYear(statsByPub, minYear, maxYear) {
 function getMarkerSize(total, scaleMethod) {
     var radius = Math.log(total);
     if (scaleMethod == 'linear') {
-        radius = Math.ceil(total / 1000000);
+        radius = Math.ceil(total / 2000000);
     }
-    return radius;
+    return Math.max(5, radius);  // assign minimum
 }
 
 </script>
