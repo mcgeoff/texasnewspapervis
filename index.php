@@ -194,8 +194,9 @@ function drawSizeLegend() {
     if ($('#legend_size').children().length > 0) {
         $('#legend_size').children().remove();
     }
-    drawSizeLegendSingle(1000000);
-    drawSizeLegendSingle(10000000);
+    //alert('hehe');
+    drawSizeLegendSingle(10000);
+    drawSizeLegendSingle(100000);
 }
 
 function drawSizeLegendSingle(total) {
@@ -203,13 +204,12 @@ function drawSizeLegendSingle(total) {
     $('#legend_size').append(element);
 
     var canvasId = 'legend_size_' + total;
-    element.append($('<canvas width="80" height="80" id="' +
-                     canvasId + '"></canvas>'));
+    element.append($('<canvas id="' + canvasId + '"></canvas>'));
     var canvas = document.getElementById(canvasId);
     if (canvas.getContext) {
-        // TODO
-        var r = getMarkerSize(total, currentState.markerSizeScale) / 2;
-        r = Math.round(r / Math.pow(2, 6));
+        var r = getMarkerSize(total, currentState.markerSizeScale);
+        canvas.width = (r+2) * 2;
+        canvas.height = (r+2) * 2;
 
         //alert(r);
 
@@ -502,6 +502,7 @@ function drawMarkers(statsByCity) {
             parseFloat(data[i]["lat"]),
             parseFloat(data[i]["lng"]));
 
+        // determine color
         var bin = 0;
         for (; bin < colorRamp.length; bin++) {
             if (goodPercent <= colorRampThreshold[bin]) {
@@ -510,25 +511,49 @@ function drawMarkers(statsByCity) {
         }
         var color = colorRamp[bin];
 
-        var strokeColor = color;
-        var strokeOpacity = 0;
-        if (currentState.city == data[i]["city"]) {
-            strokeColor = '#ffff00';
-            strokeOpacity = 1;
+        // determine radius
+        var r = getMarkerSize(total, currentState.markerSizeScale);
+
+        // create canvas element as marker
+        var canvas = document.createElement('canvas');
+        if (canvas.getContext) {
+            rs = r - 3;
+            canvas.width = r * 2;
+            canvas.height = r * 2;
+
+            // draw circle according to size and color from data
+            var ctx = canvas.getContext('2d');
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = color;
+            ctx.arc(r, r, rs, 0, Math.PI * 2);
+            ctx.fill();
+
+            // highlight current city
+            if (currentState.city == data[i]["city"]) {
+                ctx.strokeStyle="#ffff00";
+                ctx.lineWidth = 3;
+                ctx.arc(r, r, rs, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
+            ctx.strokeText(r, r - 4, r + 4);
         }
 
-        // scale marker size according to current select
-        var radius = getMarkerSize(total, currentState.markerSizeScale);
-        marker = new google.maps.Circle({
-            center: loc,
+        // create the marker image
+        var image = new google.maps.MarkerImage(
+            canvas.toDataURL(),  // url to the canvas image
+            new google.maps.Size(2*r, 2*r), // size
+            new google.maps.Point(0, 0),    // origin
+            new google.maps.Point(r, r));   // anchor
+
+        // generate the marker
+        marker = new google.maps.Marker({
+            position: loc,
             map: map,
+            icon: image,
             city: data[i]["city"],
-            radius: radius,
-            fillColor: color,
-            fillOpacity: 0.8,
-            strokeColor: strokeColor,
-            strokeOpacity: strokeOpacity,
-            strokeWeight: 4,
         });
 
         addMarkerListener(marker);
@@ -665,9 +690,9 @@ function getTrendByYear(statsByPub, minYear, maxYear) {
 }
 
 function getMarkerSize(total, scaleMethod) {
-    var radius = Math.log(total) * 2000;
+    var radius = Math.log(total);
     if (scaleMethod == 'linear') {
-        radius = Math.ceil(total / 2000);
+        radius = Math.ceil(total / 1000000);
     }
     return radius;
 }
