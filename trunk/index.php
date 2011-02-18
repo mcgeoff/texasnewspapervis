@@ -355,11 +355,9 @@ function drawCityChart() {
             '<a href="http://west.stanford.edu">' +
             pubTrendByYear[k]['pub'] +
             '</a>';
-        //pub_chart.appendChild(title_div);
 
         // add new DIV element for chart
         var chart_div = document.createElement('div');
-        //chart_div.id = 'pub_chart_div' + k;
         chart_div.id = 'area';
         $("#pub_char").html("");
         pub_chart.appendChild(chart_div);
@@ -367,7 +365,6 @@ function drawCityChart() {
 		minyear = 1829;
 		var dateFormat = pv.Format.date("%y");
 		for (newspaper in jsonObj) {
-			//alert(newspaper);
 			jsonObj[newspaper].forEach(function(d) {
 				var mySplitResult = d.year.toString().split(" ");
 				var year = d.year;
@@ -381,8 +378,6 @@ function drawCityChart() {
 		}
 		var counter = 0;
 		
-		
-		//console.log(jsonObj);
 		var w = 400,
 		    h = 170,
 		   x = pv.Scale.linear(dateFormat.parse("1700"),dateFormat.parse("2010")).range(0, w),
@@ -409,11 +404,8 @@ function transform() {
   var t = this.transform().invert();
   var mx = x.invert(vis.mouse().x);
   var y = mx.toString().split(" ")[3];
-  console.log("one" + t.x / w);
-  console.log("two" + (parseFloat((t.k + t.x / w)*10000) - 10000));
- //console.log(t.k +"," + t.x + "," + t.y);
-  x.domain(dateFormat.parse(Math.round(parseInt(y) + 10 +  (parseFloat((t.k + t.x / w)*10000) - 10000)).toString()),dateFormat.parse(Math.round(parseInt(y) - 10 - (parseFloat((t.k + t.x / w)*10000) - 10000)).toString()));
-  //y.domain(t.y / h * 2 * ky - ky, (t.k + t.y / h) * 2 * ky - ky);
+  var timerange  = (parseInt((t.k-1)*5*1000));
+  x.domain(dateFormat.parse((1890 + (t.x/10) - timerange).toString()), dateFormat.parse((2000 + (t.x/10) + timerange).toString()));
   vis.render();
 }
 
