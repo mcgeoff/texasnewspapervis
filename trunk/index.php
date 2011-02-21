@@ -316,27 +316,20 @@ function drawSimileTimeline() {
 }
    
 function drawCityChart() {
-    // remove previous sparklines
+    // remove previous charts
     var pub_chart = document.getElementById('pub_chart');
     while (pub_chart.childNodes.length > 0) {
         pub_chart.removeChild(pub_chart.firstChild);
     }
+
+    // preparing data
 	var jsonObj = {};
-    // add sparklines for publications
-    var bgColors = ['#ffffff', '#eeeeee'];
-    var idx = 0;
- 
     var numYears = maxYear - minYear + 1; 
     for (var k in pubTrendByYear) {
         if (pubTrendByYear[k]['city'] != currentState.city) {
             continue;
         }
 		jsonObj[k] =  new Array();
-        // prepare data
-        var data = new google.visualization.DataTable();
-        data.addColumn('string', 'Year');
-        data.addColumn('number', '%Good');
-        data.addRows(numYears);
 
         var goodPercent = pubTrendByYear[k]["goodPercent"];
         for (var i = 0; i < numYears; i++) {
@@ -344,24 +337,17 @@ function drawCityChart() {
                 goodPercent[i] = 0;
             }
             var strYear = "" + (i + minYear);
-            data.setValue(i, 0, strYear);
-            data.setValue(i, 1, goodPercent[i]);
             jsonObj[k].push({year: strYear, percentGood: goodPercent[i]});
         }
+    }
 
-        // add DIV element for pub title
-        var title_div = document.createElement('div');
-        title_div.innerHTML =
-            '<a href="http://west.stanford.edu">' +
-            pubTrendByYear[k]['pub'] +
-            '</a>';
+    // add new DIV element for chart
+    var chart_div = document.createElement('div');
+    chart_div.id = 'area';
+    $("#pub_char").html("");
+    pub_chart.appendChild(chart_div);
 
-        // add new DIV element for chart
-        var chart_div = document.createElement('div');
-        chart_div.id = 'area';
-        $("#pub_char").html("");
-        pub_chart.appendChild(chart_div);
-
+        // begin draw of chart with Protovis
 		minyear = 1829;
 		var dateFormat = pv.Format.date("%y");
 		for (newspaper in jsonObj) {
@@ -451,12 +437,6 @@ panel100.add(pv.Bar)
 
 
 		vis.render();
-		
-        // draw chart
-        //var chart = new google.visualization.LineChart(chart_div);
-        //var bgColor = bgColors[idx % 2]; // specify background color
-        idx++;
-      }
 }
 
 function drawCityInfo() {
@@ -615,8 +595,8 @@ function updateCity(city) {
 }
 
 function onCityChange() {
-    drawCityChart();
     drawCityInfo();
+    drawCityChart();
 }
 
 function onYearRangechange() {
