@@ -133,7 +133,7 @@ function drawMap() {
       zoom: config.map.initialZoom,
       center: myLatlng,
       mapTypeId: google.maps.MapTypeId.TERRAIN,
-      mapTypeControl: false,
+      //mapTypeControl: false,
       streetViewControl: false,
       panControlOptions: {
           position: google.maps.ControlPosition.TOP_RIGHT,
@@ -520,49 +520,19 @@ function drawMarkers(statsByCity) {
         }
         var color = colorRamp[bin];
 
-        // determine radius
-        var r = getMarkerSize(total, currentState.markerSizeScale);
-
-        // create canvas element as marker
-        var canvas = document.createElement('canvas');
-        if (canvas.getContext) {
-            rs = r - 3;
-            canvas.width = r * 2;
-            canvas.height = r * 2;
-
-            // draw circle according to size and color from data
-            var ctx = canvas.getContext('2d');
-            ctx.globalAlpha = 0.5;
-            ctx.fillStyle = color;
-            ctx.arc(r, r, rs, 0, Math.PI * 2);
-            ctx.fill();
-
-            // highlight current city
-            if (currentState.city == data[i]["city"]) {
-                ctx.strokeStyle="#ffff00";
-                ctx.lineWidth = 3;
-                ctx.arc(r, r, rs, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-
-            ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 1;
-            ctx.strokeText(shorterNumber(total), r - 8, r + 4);
-        }
-
-        // create the marker image
-        var image = new google.maps.MarkerImage(
-            canvas.toDataURL(),  // url to the canvas image
-            new google.maps.Size(2*r, 2*r), // size
-            new google.maps.Point(0, 0),    // origin
-            new google.maps.Point(r, r));   // anchor
+        // generate 2 images, for mouseover and mouseout, default to mouseout
+        var highlight = (currentState.city == data[i]["city"]);
+        var imageMouseOver = createMapMarkerImage(total, color, highlight, true);
+        var imageMouseOut  = createMapMarkerImage(total, color, highlight, false);
 
         // generate the marker
         marker = new google.maps.Marker({
             position: loc,
             map: map,
-            icon: image,
+            icon: imageMouseOut,
             city: data[i]["city"],
+            imageMouseOver: imageMouseOver,
+            imageMouseOut: imageMouseOut,
         });
 
         addMarkerListener(marker);
@@ -646,7 +616,59 @@ function addMarkerListener(marker) {
         updateCity(marker.city);
         drawMarkers(statsByCity);
     });
+
+    google.maps.event.addListener(marker, "mouseover", function() {
+        marker.setIcon(marker.imageMouseOver);
+    });
+
+    google.maps.event.addListener(marker, "mouseout", function() {
+        marker.setIcon(marker.imageMouseOut);
+    });
 }
+
+function createMapMarkerImage(total, color, highlight, withCenterText) {
+    // determine radius
+    var r = getMarkerSize(total, currentState.markerSizeScale);
+
+    // create canvas element as marker
+    var canvas = document.createElement('canvas');
+    if (canvas.getContext) {
+        rs = r - 3;
+        canvas.width = r * 2;
+        canvas.height = r * 2;
+
+        // draw circle according to size and color from data
+        var ctx = canvas.getContext('2d');
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = color;
+        ctx.arc(r, r, rs, 0, Math.PI * 2);
+        ctx.fill();
+
+        // highlight current city
+        if (highlight) {
+            ctx.strokeStyle="#ffff00";
+            ctx.lineWidth = 3;
+            ctx.arc(r, r, rs, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // draw center text
+        if (withCenterText) {
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
+            ctx.strokeText(shorterNumber(total), r - 8, r + 4);
+        }
+    }
+
+    // create the marker image
+    var image = new google.maps.MarkerImage(
+        canvas.toDataURL(),  // url to the canvas image
+        new google.maps.Size(2*r, 2*r), // size
+        new google.maps.Point(0, 0),    // origin
+        new google.maps.Point(r, r));   // anchor
+    return image;
+}
+
 
 function onResize() {
     if (simile_resizeTimerID == null) {

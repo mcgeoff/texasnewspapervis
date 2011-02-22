@@ -20,11 +20,19 @@ var config = {
     },
 
     colorRamp: [
+        '#d7191c',  // lowest good / total
+        '#fdae61',
+        '#ffffbf',
+        '#a6d96a',
+        '#1a9641',  // highest good / total
+        /*
+        // previous version, with only red hue
         '#993404',  // lowest good / total
         '#d95f0e',
         '#fe9929',
         '#fed98e',
         '#ffffcc',  // highest good / total
+        */
     ],
     pvcolorRamp: [
         '#993404',  // lowest good / total
