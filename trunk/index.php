@@ -656,7 +656,9 @@ function createMapMarkerImage(total, color, highlight, withCenterText) {
         if (withCenterText) {
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 1;
-            ctx.strokeText(shorterNumber(total), r - 8, r + 4);
+            var txt = shorterNumber(total);
+            var txtWidth = ctx.measureText(txt).width;  // draw at center, accurately
+            ctx.strokeText(txt, r - txtWidth / 2, r + 4);
         }
     }
 
