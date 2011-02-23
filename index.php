@@ -64,6 +64,7 @@ var markers = [];
 var timeline = null;
 var simile_timeline;    // for simile timeline
 var simile_resizeTimerID = null;
+var shifted; // If shifted is pressed
 
 var pubTrendByYear = getTrendByYear(statsByPub, minYear, maxYear);
 
@@ -364,7 +365,7 @@ function drawCityChart() {
 		}
 		var counter = 0;
 		
-		var w = 400,
+		var w = 270,
 		    h = 170,
 		   x = pv.Scale.linear(dateFormat.parse("1700"),dateFormat.parse("2010")).range(0, w),
 		    y = pv.Scale.linear(0, 1).range(0, h);
@@ -391,49 +392,47 @@ function transform() {
   var mx = x.invert(vis.mouse().x);
   var y = mx.toString().split(" ")[3];
   var timerange  = (parseInt((t.k-1)*5*1000));
-  x.domain(dateFormat.parse((1890 + (t.x/10) - timerange).toString()), dateFormat.parse((2000 + (t.x/10) + timerange).toString()));
+  x.domain(dateFormat.parse((1829 + (t.x/10) - timerange).toString()), dateFormat.parse((2000 + (t.x/10) + timerange).toString()));
   vis.render();
 }
 
-		for (newspapert in jsonObj) {
-			
-			//console.log(jsonObj[newspapert]);
+
+update = function(counter) {
+	forced = "true";
+	if ($("."+counter).is(':checked')){
+	  eval("panel"+counter+".i(10)");
+	} else {
+	   eval("panel"+counter+".i(-1)");
+	}
+  console.log(panel0.i());
+  vis.render();
+}
+check = function(counter, method) {
+	$(".newspaperlist").attr('checked', false);
+	counters = 0;
+	if (method == "check") {
+		counters++;
+		$("."+counter).attr('checked', true);
+		if (counters == 1) {
+			$("#newspaperlist").animate({ scrollTop: counter*16 }, 100);
+		}
+	} else {
+		$("."+counter).attr('checked', false);
+	}
+}
+
+$("#newspaperlist").html("");
+
+for (newspapert in jsonObj) {
+			$("#newspaperlist").append("<input type='checkbox' name='display' class='newspaperlist "+counter+"' onchange='update("+counter+");' id='"+newspapert.replace(/\s/g, "")+"' checked/>" + newspapert + "<br />");
 			eval("var panel"+ counter + " = vis.add(pv.Panel).def('i', -1);");
 		
-			eval("panel"+counter+".add(pv.Area).data(jsonObj[newspapert]).bottom(1).left(function (d) { return x(d.year); }).height(function (d) { return y(d.percentGood); }).event('mouseover', function () { panel"+counter+".i(10); this.render(); return panel100.x("+counter+"); }).event('mouseout', function () { 		    panel"+counter+".i(-1); this.render(); return panel100.x(-1);	}).fillStyle(function (d, p) { if (panel"+counter+".i() < 0) { return 'rgba(238, 238, 238, 0.00001)'; } else { return '"+config.pvcolorRamp[counter]+"'; } }).anchor('top').add(pv.Line).strokeStyle(function() { return '" + config.pvcolorRamp[counter]+ "'; }).lineWidth(function (d, p) { if (panel"+counter+".i() < 0) { return 0.5; } else { return 1; }});");
+			eval("panel"+counter+".add(pv.Area).data(jsonObj[newspapert]).visible(function() { return true; }).bottom(1).left(function (d) { return x(d.year); }).height(function (d) { return y(d.percentGood); }).event('mouseover', function () { check("+counter+", 'check');panel"+counter+".i(10); selected = "+counter+"; newspaperselected = newspapert;this.render(); }).event('mouseout', function () {  check("+counter+", 'uncheck'); panel"+counter+".i(-1); this.render(); 	}).fillStyle(function (d, p) { if (panel"+counter+".i() < 0) { return 'rgba(238, 238, 238, 0.00001)'; } else { return '"+config.pvcolorRamp[counter]+"'; } }).anchor('top').add(pv.Line).strokeStyle(function() { return '" + config.pvcolorRamp[counter]+ "'; }).lineWidth(function (d, p) { if (panel"+counter+".i() < 0) { return 0.5; } else { return 1; }});");
 		counter++;
-			
-			
-		}
+				
+}
 		
 		
-		
-
-////////////////////////////////////////////////////////////////////
-var selected = 0;
-var panel100 = vis.add(pv.Panel).def("x", -1); /* Antibiotic legend. */
-panel100.add(pv.Bar)
-
-.data(pv.keys(jsonObj)).right(370).event("mouseover", function (d) {
-        panel100.x(this.index);
-        this.render();
-        //alert(this.index);
-   		return eval("panel" + this.index + ".i(10)");
-}).event("mouseout", function (d) {
-        panel100.x(-1);
-        this.render();
-        // alert(this.index);
-		return eval("panel" + this.index + ".i(-1)");
-
-}).bottom(function () { return (10 + this.index * 18) }).fillStyle(function (d, p) {
-
-    if (panel100.x() == this.index) {
-        return config.pvcolorRamp[this.index];
-    } else {
-        return "rgba(238, 238, 238, 1)";
-    }
-}).width(20).height(12).anchor("right").add(pv.Label).textMargin(6).textAlign("left");
-
 
 
 		vis.render();
@@ -465,11 +464,20 @@ function drawCityInfo() {
     }
 }
 
-function drawMarkers(statsByCity) {
-    // clean up previous markers
-    while (markers.length > 0) {
-        markers.pop().setMap(null);
-    }
+function drawMarkers(statsByCity, shiftselected) {
+
+	// if shift is being pressed
+	if (shiftselected != null) {
+		
+	
+	} else {
+	    // clean up previous markers
+	    while (markers.length > 0) {
+	        markers.pop().setMap(null);
+	    }
+	}
+
+
 
     // compute data by city, for all years in range
     var data = [];
@@ -612,9 +620,22 @@ function yearInRange(year) {
 }
 
 function addMarkerListener(marker) {
+	document.onkeydown = function(evt) {
+    evt = evt || window.event;
+    if (evt.keyCode == 16) {
+       	shifted = "true";
+    	}
+	};
+	document.onkeyup = function(evt) {
+    evt = evt || window.event;
+    if (evt.keyCode == 16) {
+       	shifted = null;
+    	}
+	};
+	
     google.maps.event.addListener(marker, "click", function() {
         updateCity(marker.city);
-        drawMarkers(statsByCity);
+        drawMarkers(statsByCity, shifted);
     });
 
     google.maps.event.addListener(marker, "mouseover", function() {
@@ -765,7 +786,9 @@ function shorterNumber(n) {
     <div id="leftcolumn">
       <div id="city_info" style="display: none"></div>
       <br/>
+      <div id="newspaperlist"></div>
       <div id="pub_chart"></div>
+      <div id="rightarrow"></div>
     </div>
 
     <!-- center column -->
