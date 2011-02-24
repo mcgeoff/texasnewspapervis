@@ -130,11 +130,41 @@ function drawMap() {
         config.map.center.lat,
         config.map.center.lng);
 
+    var myMapTypeId = "Dark";
+    var myMapTypeStyle = [
+        {
+            featureType: "all",
+            elementType: "all",
+            stylers: [
+                {
+                    invert_lightness: true,
+                },
+            ],
+        },
+        {
+            featureType: "administrative",
+            elementType: "all",
+            stylers: [
+                {
+                    visibility: 'off',
+                },
+            ],
+        },
+        {
+            featureType: "road",
+            elementType: "all",
+            stylers: [
+                {
+                    visibility: 'off',
+                },
+            ],
+        },
+
+    ];
+
     var myOptions = {
       zoom: config.map.initialZoom,
       center: myLatlng,
-      mapTypeId: google.maps.MapTypeId.TERRAIN,
-      //mapTypeControl: false,
       streetViewControl: false,
       panControlOptions: {
           position: google.maps.ControlPosition.TOP_RIGHT,
@@ -142,9 +172,19 @@ function drawMap() {
       zoomControlOptions: {
           position: google.maps.ControlPosition.TOP_RIGHT,
       },
+      mapTypeControlOptions: {
+          mapTypeIds: [google.maps.MapTypeId.TERRAIN,
+                       google.maps.MapTypeId.ROADMAP,
+                       google.maps.MapTypeId.SATELLITE,
+                       myMapTypeId],
+      },
+      mapTypeId: google.maps.MapTypeId.TERRAIN,
     };
 
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+    map.mapTypes.set(myMapTypeId, new google.maps.StyledMapType(
+        myMapTypeStyle, {name: myMapTypeId}));
+    map.setMapTypeId(myMapTypeId);
 
     drawContour(map);
 
