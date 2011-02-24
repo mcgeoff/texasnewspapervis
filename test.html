@@ -37,13 +37,45 @@
           uri = canvas.toDataURL();
       }
 
+      var myMapTypeId = "Simplified";
+      var myMapTypeStyle = [
+          {
+              featureType: "landscape",
+              elementType: "geometry",
+              stylers: [
+                  {
+                      hue: '#000099',
+                      saturation: 100,
+                  },
+              ],
+          },
+          {
+              featureType: "administrative",
+              elementType: "all",
+              stylers: [
+                  {
+                      visibility: "off",
+                  },
+              ],
+          },
+      ];
+
       var myOptions = {
           zoom: 4,
           center: new google.maps.LatLng(-33, 151),
-          mapTypeId: google.maps.MapTypeId.ROADMAP
+          mapTypeControlOptions: {
+              mapTypeIds: [google.maps.MapTypeId.TERRAIN,
+                           google.maps.MapTypeId.ROADMAP,
+                           google.maps.MapTypeId.SATELLITE,
+                           myMapTypeId],
+          },
+          mapTypeId: google.maps.MapTypeId.TERRAIN,
       };
-      var map = new google.maps.Map(document.getElementById("map_canvas"),
-                                    myOptions);
+      var map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+      map.mapTypes.set(myMapTypeId, new google.maps.StyledMapType(
+          myMapTypeStyle, {name: "SIMPLIFIED"}));
+      map.setMapTypeId('Simplified');
+
       var image = uri;
       var myLatLng = new google.maps.LatLng(-33.890542, 151.274856);
       var beachMarker = new google.maps.Marker({
