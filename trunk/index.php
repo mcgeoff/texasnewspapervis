@@ -471,7 +471,20 @@ for (newspapert in jsonObj) {
 		counter++;
 				
 }
-		
+		$("#newspaperlist").append("<input type='button' name='zoom' class='zoomin' value='+' /><br />");
+		$("#newspaperlist").append("<input type='button' name='zoom' class='zoomout' value='-' /><br />");
+		$(".zoomin").mousehold(function() {
+			tx++;
+			  x.domain(dateFormat.parse((1829 + tx).toString()), dateFormat.parse((2000 - tx).toString()));
+  vis.render();
+			
+		});
+		$(".zoomout").mousehold(function() {
+				tx--;
+			  x.domain(dateFormat.parse((1829 + tx).toString()), dateFormat.parse((2000 - tx).toString()));
+  vis.render();			
+		});
+ 
 		
 
 
