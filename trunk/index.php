@@ -407,7 +407,7 @@ function drawCityChart() {
 		
 		var w = 270,
 		    h = 170,
-		   x = pv.Scale.linear(dateFormat.parse("1700"),dateFormat.parse("2010")).range(0, w),
+		   x = pv.Scale.linear(dateFormat.parse("1829"),dateFormat.parse("2010")).range(0, w),
 		    y = pv.Scale.linear(0, 1).range(0, h);
 		
 		/* The root panel. */
