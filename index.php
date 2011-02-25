@@ -460,7 +460,7 @@ check = function(counter, method) {
 		$("."+counter).attr('checked', false);
 	}
 }
-
+var tx;
 $("#newspaperlist").html("");
 
 for (newspapert in jsonObj) {
