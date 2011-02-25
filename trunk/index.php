@@ -20,7 +20,7 @@
 <link type="text/css" rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.8/themes/base/jquery-ui.css">
 <link rel="stylesheet" type="text/css" href="timeline_style.css"/> 
 <link rel="stylesheet" type="text/css" href="style.css"/>
- 
+<script type="text/javascript" src="mousehold.js"></script>
 
 <script type="text/javascript">
 
