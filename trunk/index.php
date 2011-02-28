@@ -45,17 +45,23 @@ var currentState = {
     // never updated
     state: config.defaultState,
     // update year range through google timeline
-    yearRange: {
-        min: minYear,   // From, inclusive
-        max: maxYear,   // To, inclusive
-    },
+    yearRangeMin: minYear,
+    yearRangeMax: maxYear,
     // update color range through color legend
-    colorRange: {
-        min: 0,                             // From, inclusive
-        max: colorRampThreshold.length - 1, // To, inclusive
-    },
+    colorRangeMin: 0,
+    colorRangeMax: colorRampThreshold.length - 1,
     // update marker size scale through <select>
     markerSizeScale: 'log',
+};
+
+var isInteger = {
+    city: false,
+    state: false,
+    yearRangeMin: true,
+    yearRangeMax: true,
+    colorRangeMin: true,
+    colorRangeMax: true,
+    markerSizeScale: false,
 };
 
 // global widgets and structures
@@ -75,6 +81,7 @@ var pubTrendByYear = getTrendByYear(statsByPub, minYear, maxYear);
 google.load('visualization', '1', {'packages':['annotatedtimeline', 'corechart']});
 
 $(document).ready(function () {
+    URLToCurrentState();
     drawTitleBlock();
     drawLegend();
     drawMap();
@@ -508,8 +515,8 @@ function drawCityInfo() {
         $('#city_info').hide('slow', function() {
             $('#city_info').html(
                 "<span id='cityname'>" + currentState.city + ", " + currentState.state + "</span>, " +
-                currentState.yearRange.min + " - " +
-                currentState.yearRange.max + "<br/>" +
+                currentState.yearRangeMin + " - " +
+                currentState.yearRangeMax + "<br/>" +
                 "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
                 "Total Characters Scanned: " + stats["mTotal"] + "<br/>");
         });
@@ -529,8 +536,6 @@ function drawMarkers(statsByCity, shiftselected) {
 	        markers.pop().setMap(null);
 	    }
 	}
-
-
 
     // compute data by city, for all years in range
     var data = [];
@@ -563,8 +568,8 @@ function drawMarkers(statsByCity, shiftselected) {
         var goodPercent = good / total;
 
         // keep only markers with color in range
-        if (goodPercent < colorRampThreshold[currentState.colorRange.min] ||
-            goodPercent > colorRampThreshold[currentState.colorRange.max] + 0.1) {
+        if (goodPercent < colorRampThreshold[currentState.colorRangeMin] ||
+            goodPercent > colorRampThreshold[currentState.colorRangeMax] + 0.1) {
             continue;
         }
 
@@ -602,8 +607,8 @@ function drawMarkers(statsByCity, shiftselected) {
 }
 
 function drawColorRangeDisplay() {
-    var percentageMin = colorRampThreshold[currentState.colorRange.min];
-    var percentageMax = colorRampThreshold[currentState.colorRange.max] + 0.1;
+    var percentageMin = colorRampThreshold[currentState.colorRangeMin];
+    var percentageMax = colorRampThreshold[currentState.colorRangeMax] + 0.1;
 
     percentageMin = (percentageMin * 100).toPrecision(3) + '%';
     percentageMax = (percentageMax * 100).toPrecision(3) + '%';
@@ -628,34 +633,42 @@ function updateCity(city) {
 function onCityChange() {
     drawCityInfo();
     drawCityChart();
+
+    currentStateToURL();
 }
 
 function onYearRangechange() {
-    currentState.yearRange.min = timeline.getVisibleChartRange().start.getFullYear();
-    currentState.yearRange.max = timeline.getVisibleChartRange().end.getFullYear();
+    currentState.yearRangeMin = timeline.getVisibleChartRange().start.getFullYear();
+    currentState.yearRangeMax = timeline.getVisibleChartRange().end.getFullYear();
 
     drawCityInfo();
     drawMarkers(statsByCity);
     setSimileCenterYear('' +
-        Math.round((currentState.yearRange.min +
-                    currentState.yearRange.max) / 2));
+        Math.round((currentState.yearRangeMin +
+                    currentState.yearRangeMax) / 2));
+
+    currentStateToURL();
 }
 
 function onColorRangeChange() {
     // record updated color range
     var range = $( "#legend_slider" ).slider("values");
-    currentState.colorRange.min = range[0];
-    currentState.colorRange.max = range[1];
+    currentState.colorRangeMin = range[0];
+    currentState.colorRangeMax = range[1];
 
     drawColorRangeDisplay();
 
     // update markers, keeping only those with color in range
     drawMarkers(statsByCity);
+
+    currentStateToURL();
 }
 
 function onMarkerSizeScaleChange() {
     drawMarkers(statsByCity);
     drawSizeLegend();
+
+    currentStateToURL();
 }
 
 
@@ -665,8 +678,8 @@ function onMarkerSizeScaleChange() {
 function yearInRange(year) {
     // currently only work on SIMILE timeline
     var inRange = false;
-    if (parseInt(year) >= parseInt(currentState.yearRange.min) &&
-        parseInt(year) <= parseInt(currentState.yearRange.max)) {
+    if (parseInt(year) >= parseInt(currentState.yearRangeMin) &&
+        parseInt(year) <= parseInt(currentState.yearRangeMax)) {
         inRange = true;
     }
     return inRange;
@@ -819,6 +832,39 @@ function shorterNumber(n) {
         s = n;
     }
     return s;
+}
+
+function URLToCurrentState() {
+    var hash = window.location.hash;
+    hash = decodeURI(hash);
+    for (var k in currentState) {
+        var v = decodeValueFromURL(hash, k);
+        if (v.length > 0) {
+            if (isInteger[k]) {
+                currentState[k] = parseInt(v);
+                currentState[k] = isNaN(currentState[k]) ? 0 : currentState[k];
+            }
+            else {
+                currentState[k] = v;
+            }
+        }
+    }
+}
+
+function decodeValueFromURL(hash, key) {
+    var valueLocation = hash.indexOf(key + "=") + key.length + 1;
+    var nextAmpLocation = hash.indexOf("&", valueLocation);
+    var value = hash.substring(valueLocation, nextAmpLocation);
+    return value;
+}
+
+function currentStateToURL() {
+    var hash = "";
+    for (var k in currentState) {
+        hash += ("&" + k + "=" + currentState[k]);
+    }
+    hash = encodeURI(hash);
+    window.location.hash = "#!" + hash;
 }
 
 </script>

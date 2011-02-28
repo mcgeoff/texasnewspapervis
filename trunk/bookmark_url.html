@@ -6,35 +6,63 @@
 
 var state = {
     x: 0,
+    y: 0,
+    z: 0,
 };
 
 function initialize() {
-    var search = window.location.search;
-    var x = parseInt(search.substring(search.indexOf("x=") + 2));
-    if (!isNaN(x)) {
-        state.x = x;
-    } else {
-        state.x = 0;
-    }
+    URLToState();
     drawByState();
 }
 
 function onClickDisp() {
-    state.x = state.x + 1;
+    for (var k in state) {
+        state[k] = Math.round(100 * Math.random());
+    }
     drawByState();
+    stateToURL();
 }
 
 function drawByState() {
     $("#disp").hide('slow', function () {
-        $("#var").html(state.x);
+        var s = "";
+        for (var k in state) {
+            s += k + ":" + state[k] + ", ";
+        }
+        $("#state").html(s);
     });
     $("#disp").show('slow');
 }
 
-function onClickCtrl() {
-    var loc = window.location;
-    var urlg = loc.origin + loc.pathname + "?x=" + state.x;
-    $("#urlg").html("<a href=\"" + urlg + "\">" + urlg + "</a>");
+function URLToState() {
+    var hash = window.location.hash;
+    for (var k in state) {
+        state[k] = parseInt(decodeValueFromURL(hash, k));
+        state[k] = isNaN(state[k]) ? 0 : state[k];
+    }
+}
+
+function decodeValueFromURL(hash, key) {
+    var valueLocation = hash.indexOf(key + "=") + key.length + 1;
+    var value = hash.substring(valueLocation);
+    return value;
+}
+
+function stateToURL() {
+    var hash = "";
+    for (var k in state) {
+        hash += encodeValueToURL(hash, k);
+    }
+    window.location.hash = "#!" + hash;
+}
+
+function encodeValueToURL(hash, key) {
+    var s = "";
+    if (hash.length > 0) {
+        s = "&";
+    }
+    s += key + "=" + state[key];
+    return s;
 }
 
 </script>
@@ -48,12 +76,9 @@ function onClickCtrl() {
     <br/>
     <div>
         <button onclick="onClickDisp();">Increase state variable</button>
-        <p id="disp">state.x = <span id="var">0</span></p>
-    </div>
-    <br/>
-    <div id="ctrl">
-        <button onclick="onClickCtrl();">Generate bookmark url</button>
-        <p id="urlg"></p>
+        <p id="disp">
+            <span id="state"></span>
+        </p>
     </div>
 </body>
 
