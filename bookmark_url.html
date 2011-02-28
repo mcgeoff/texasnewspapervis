@@ -1,0 +1,59 @@
+<html>
+
+<head>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
+<script type="text/javascript">
+
+var state = {
+    x: 0,
+};
+
+function initialize() {
+    var search = window.location.search;
+    var x = parseInt(search.substring(search.indexOf("x=") + 2));
+    if (!isNaN(x)) {
+        state.x = x;
+    } else {
+        state.x = 0;
+    }
+    drawByState();
+}
+
+function onClickDisp() {
+    state.x = state.x + 1;
+    drawByState();
+}
+
+function drawByState() {
+    $("#disp").hide('slow', function () {
+        $("#var").html(state.x);
+    });
+    $("#disp").show('slow');
+}
+
+function onClickCtrl() {
+    var loc = window.location;
+    $("#urlg").html(loc.origin + loc.pathname + "?x=" + state.x);
+}
+
+</script>
+</head>
+
+<body onload="initialize();">
+    <div style="width:600px">
+        <h3>Generate URL according to the internal state of a visualization</h3>
+        The url generated can be pasted into a new tab and you can observe the variable state.x initialized according to the value in the url.
+    </div>
+    <br/>
+    <div>
+        <button onclick="onClickDisp();">Increase state variable</button>
+        <p id="disp">state.x = <span id="var">0</span></p>
+    </div>
+    <br/>
+    <div id="ctrl">
+        <button onclick="onClickCtrl();">Generate bookmark url</button>
+        <p id="urlg"></p>
+    </div>
+</body>
+
+</html>
