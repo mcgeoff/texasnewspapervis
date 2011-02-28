@@ -33,7 +33,8 @@ function drawByState() {
 
 function onClickCtrl() {
     var loc = window.location;
-    $("#urlg").html(loc.origin + loc.pathname + "?x=" + state.x);
+    var urlg = loc.origin + loc.pathname + "?x=" + state.x;
+    $("#urlg").html("<a href=\"" + urlg + "\">" + urlg + "</a>");
 }
 
 </script>
