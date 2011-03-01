@@ -124,7 +124,12 @@ function drawTimeline() {
 
     timeline = new google.visualization.AnnotatedTimeLine(
         document.getElementById('timeline_vis'));
-    timeline.draw(data, {'displayAnnotations': true});
+    timeline.draw(data, {'displayAnnotations': true,});
+
+    // TODO
+    var dateStart = new Date(1920, 2, 2);
+    var dateEnd = new Date(1950, 2, 2);
+    timeline.setVisibleChartRange(dateStart, dateEnd);
 
     google.visualization.events.addListener(
         timeline,
@@ -202,14 +207,6 @@ function drawMap() {
 function drawLegend() {
     drawColorLegend();
     drawSizeLegend();
-
-    $('input[name=scale_select]').change(function () {
-        currentState.markerSizeScale = $('input[name=scale_select]:checked').val();
-        $('#legend_size').fadeOut('slow', function() {
-            onMarkerSizeScaleChange();
-        });
-        $('#legend_size').fadeIn('slow');
-    });
 }
 
 function drawColorLegend() {
@@ -225,11 +222,11 @@ function drawColorLegend() {
             ctx.fillRect(x + i * s, y, s, s);
         }
             
-        $( "#legend_slider").slider({
+        $("#legend_slider").slider({
             orientation: "horizontal",
             max: colorRamp.length - 1,
             range: true,
-            values: [0, colorRamp.length - 1],
+            values: [currentState.colorRangeMin, currentState.colorRangeMax],
             step: 1,
             change: onColorRangeChange,
         });
@@ -242,6 +239,24 @@ function drawColorLegend() {
 }
 
 function drawSizeLegend() {
+    // check corresponding scale selector
+    var scale = currentState.markerSizeScale;
+    $('input[name=scale_select][value='+scale+']').attr('checked', true);
+
+    // draw size legend chart, according to currentState.markerSizeScale
+    drawSizeLegendChart();
+
+    // add event listener
+    $('input[name=scale_select]').change(function () {
+        currentState.markerSizeScale = $('input[name=scale_select]:checked').val();
+        $('#legend_size').fadeOut('slow', function() {
+            onMarkerSizeScaleChange();
+        });
+        $('#legend_size').fadeIn('slow');
+    });
+}
+
+function drawSizeLegendChart() {
     if ($('#legend_size').children().length > 0) {
         $('#legend_size').children().remove();
     }
@@ -285,27 +300,6 @@ function drawSizeLegend() {
         ctx.strokeText(shorterNumber(nl), 2.5 * rl, 8);
         ctx.strokeText(shorterNumber(ns), 2.5 * rl, 2 * rl - 2 * rs + 8);
     }
-}
-
-function drawSizeLegendSingle(total) {
-    var element = $('<div></div>');
-    $('#legend_size').append(element);
-
-    var canvasId = 'legend_size_' + total;
-    element.append($('<canvas id="' + canvasId + '"></canvas>'));
-    var canvas = document.getElementById(canvasId);
-    if (canvas.getContext) {
-        var r = getMarkerSize(total, currentState.markerSizeScale);
-        canvas.width = (r+2) * 2;
-        canvas.height = (r+2) * 2;
-
-        var ctx = canvas.getContext('2d');
-        ctx.beginPath();
-        ctx.arc(r, r, r, 0, 2 * Math.PI, true);
-        ctx.stroke();
-    }
-
-    element.append($('<p></p>').html(total));
 }
 
 function drawContour(map) {
@@ -666,7 +660,7 @@ function onColorRangeChange() {
 
 function onMarkerSizeScaleChange() {
     drawMarkers(statsByCity);
-    drawSizeLegend();
+    drawSizeLegendChart();
 
     currentStateToURL();
 }
@@ -854,6 +848,9 @@ function URLToCurrentState() {
 function decodeValueFromURL(hash, key) {
     var valueLocation = hash.indexOf(key + "=") + key.length + 1;
     var nextAmpLocation = hash.indexOf("&", valueLocation);
+    if (nextAmpLocation < 0) {
+        nextAmpLocation = hash.length;
+    }
     var value = hash.substring(valueLocation, nextAmpLocation);
     return value;
 }
@@ -918,7 +915,7 @@ function currentStateToURL() {
       <!-- scale selector -->
       <div>
         <form>
-          <input type="radio" name="scale_select" value="log" checked="checked">Log
+          <input type="radio" name="scale_select" value="log">Log
           <input type="radio" name="scale_select" value="linear">Linear
         </form>
       </div>
