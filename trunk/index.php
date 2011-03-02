@@ -501,15 +501,17 @@ function drawCityInfo() {
     }
     if (stats != null) {
         $('#city_info').hide('slow', function() {
+            var nGood = stats["mGood"];
+            var nBad  = stats["mTotal"] - nGood;
             $('#city_info').html(
                 "<span id='cityname'>" + currentState.city + ", " + currentState.state + "</span>, " +
                 currentState.yearRangeMin + " - " +
                 currentState.yearRangeMax + "<br/>" +
-                "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
-                "Total Characters Scanned: " + stats["mTotal"] + "<br/>");
+                "<span style=\"color:red;float:left;\">Bad Scan: " + nBad + "</span>" +
+                "<span style=\"color:green;float:right;\">Good Scan: " + nGood + "</span>");
 
             // draw bar chart and append to city_info
-            var w = 300;
+            var w = 367;
             var h = 20;
             var bar = document.createElement('canvas');
             bar.width = w;
