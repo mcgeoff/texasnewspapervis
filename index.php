@@ -185,7 +185,6 @@ function drawMap() {
       mapTypeControlOptions: {
           mapTypeIds: [google.maps.MapTypeId.TERRAIN,
                        google.maps.MapTypeId.ROADMAP,
-                       google.maps.MapTypeId.SATELLITE,
                        myMapTypeId],
       },
       mapTypeId: google.maps.MapTypeId.TERRAIN,
@@ -292,7 +291,6 @@ function drawSizeLegendChart() {
         ctx.lineTo(2.5 * rl, 2 * rl - 2 * rs);
         ctx.stroke();
 
-        //ctx.fillStyle = '#000000';
         ctx.strokeText(shorterNumber(nl), 2.5 * rl, 8);
         ctx.strokeText(shorterNumber(ns), 2.5 * rl, 2 * rl - 2 * rs + 8);
     }
@@ -509,6 +507,38 @@ function drawCityInfo() {
                 currentState.yearRangeMax + "<br/>" +
                 "Good Characters Scanned: " + stats["mGood"] + "<br/>" +
                 "Total Characters Scanned: " + stats["mTotal"] + "<br/>");
+
+            // draw bar chart and append to city_info
+            var w = 300;
+            var h = 20;
+            var bar = document.createElement('canvas');
+            bar.width = w;
+            bar.height = h;
+            if (bar.getContext) {
+                var ctx = bar.getContext('2d');
+
+                // compute ratio and draw bars
+                var r = 1 - stats["mGood"] / stats["mTotal"];
+                ctx.fillStyle = 'red';
+                ctx.fillRect(0, 0, w * r, h);
+                ctx.fillStyle = 'green';
+                ctx.fillRect(w * r, 0, w * (1-r), h);
+
+                // show text for ratios
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 1.5;
+                var txtHeight = 6;
+
+                var txt = '' + Math.round(r * 100) + '%';
+                var txtWidth = ctx.measureText(txt).width;
+                ctx.strokeText(txt, w * r / 2 - txtWidth / 2, h / 2 + txtHeight / 2);
+
+                txt = '' + Math.round((1-r) * 100) + '%';
+                txtWidth = ctx.measureText(txt).width;
+                ctx.strokeText(txt, w - w * (1-r) / 2 - txtWidth / 2, h / 2 + txtHeight / 2);
+            }
+
+            $('#city_info').append(bar);
         });
         $('#city_info').show('slow');
     }
