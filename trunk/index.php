@@ -124,13 +124,11 @@ function drawTimeline() {
 
     timeline = new google.visualization.AnnotatedTimeLine(
         document.getElementById('timeline_vis'));
-    timeline.draw(data, {'displayAnnotations': true,});
-
-    // TODO
-    var dateStart = new Date(1920, 2, 2);
-    var dateEnd = new Date(1950, 2, 2);
-    timeline.setVisibleChartRange(dateStart, dateEnd);
-
+    timeline.draw(data, {
+                      'displayAnnotations': true,
+                      'zoomStartTime': new Date(currentState.yearRangeMin, 1, 1),
+                      'zoomEndTime': new Date(currentState.yearRangeMax, 1, 1),
+                  });
     google.visualization.events.addListener(
         timeline,
         'rangechange',
@@ -194,9 +192,7 @@ function drawMap() {
     };
 
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
-    map.mapTypes.set(myMapTypeId, new google.maps.StyledMapType(
-        myMapTypeStyle, {name: myMapTypeId}));
-    map.setMapTypeId(myMapTypeId);
+    map.mapTypes.set(myMapTypeId, new google.maps.StyledMapType(myMapTypeStyle, {name: myMapTypeId}));
 
     drawContour(map);
 
