@@ -52,6 +52,8 @@ var currentState = {
     colorRangeMax: colorRampThreshold.length - 1,
     // update marker size scale through <select>
     markerSizeScale: 'log',
+    // current map type, default to TERRAIN
+    mapTypeId: google.maps.MapTypeId.TERRAIN,
 };
 
 var isInteger = {
@@ -187,11 +189,15 @@ function drawMap() {
                        google.maps.MapTypeId.ROADMAP,
                        myMapTypeId],
       },
-      mapTypeId: google.maps.MapTypeId.TERRAIN,
+      mapTypeId: currentState.mapTypeId,
     };
 
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
     map.mapTypes.set(myMapTypeId, new google.maps.StyledMapType(myMapTypeStyle, {name: myMapTypeId}));
+
+    google.maps.event.addListener(map, 'maptypeid_changed', function() {
+        onMapTypeChange();
+    });
 
     drawContour(map);
 
@@ -690,6 +696,11 @@ function onMarkerSizeScaleChange() {
     drawMarkers(statsByCity);
     drawSizeLegendChart();
 
+    currentStateToURL();
+}
+
+function onMapTypeChange() {
+    currentState.mapTypeId = map.getMapTypeId();
     currentStateToURL();
 }
 
