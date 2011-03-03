@@ -517,7 +517,7 @@ function drawCityInfo() {
                 "<span style=\"color:green;float:right;\">Good Scan: " + nGood + "</span>");
 
             // draw bar chart and append to city_info
-            var w = 367;
+            var w = $('#city_info').parent().innerWidth() - 20;
             var h = 20;
             var bar = document.createElement('canvas');
             bar.width = w;
