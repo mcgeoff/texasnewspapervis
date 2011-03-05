@@ -927,7 +927,20 @@ function currentStateToURL() {
     hash = encodeURI(hash);
     window.location.hash = "#!" + hash;
 }
-
+$(function() {
+	var simileshown = "false";
+		$(".wrapper2").hide();
+		$(".clickexpand").click(function() {
+			if (simileshown == "false") {
+				$(".wrapper2").slideDown();
+				 drawSimileTimeline();
+				 simileshown = "true";
+			} else {
+				$(".wrapper2").slideUp();
+				 simileshown = "false";
+			}
+		});
+});
 </script>
 
 </head>
@@ -987,11 +1000,12 @@ function currentStateToURL() {
       </div>
       <!-- size legend -->
       <div id="legend_size"></div>
+       <button style="margin-top:260px;color:#333;cursor:pointer;width:500px;height:30px;width:100%;float:left;clear:both;" class="clickexpand movable">Click to show/hide historic timeline</button>
     </div>
   </div>
 
   <!-- SIMILE timeline -->
-  <div>
+  <div class="wrapper2 movable">
     <div id="simile_timeline" class="timeline-default" style="height: 400px;"></div>
     <button onClick="setSimileCenterYear('1890');">set date to 1890</button>
     <button onClick="getSimileCenterYear()">get currently viewed date</button>
