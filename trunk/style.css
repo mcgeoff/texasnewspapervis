@@ -64,11 +64,10 @@ h1 { font-size:30px !important;font-family: 'Goudy Bookletter 1911', arial, seri
 #newspaperlist {
 	width:120px;
 	float:left;
-	height:200px;
+	max-height:200px;
 	text-overflow:ellipsis;
 	overflow-y:auto;
 	overflow-x:hidden;
-	white-space: nowrap;
 	padding-right:10px;
 	background:#fff;
 	font-size:11px;	
