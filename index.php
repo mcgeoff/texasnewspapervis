@@ -357,13 +357,21 @@ function drawSimileTimeline() {
     });
 }
    
+var dateFormat = pv.Format.date("%y");
+var w = 250,
+	h = 170,
+	x = pv.Scale.linear(dateFormat.parse(currentState.yearRangeMin.toString()),dateFormat.parse(currentState.yearRangeMax.toString())).range(0, w),
+	y = pv.Scale.linear(0, 1).range(0, h);
+	
+var vis = new pv.Panel().width(w).height(h).bottom(20).left(30).right(10).top(5).canvas('area');
+
 function drawCityChart() {
     // remove previous charts
     var pub_chart = document.getElementById('pub_chart');
     while (pub_chart.childNodes.length > 0) {
         pub_chart.removeChild(pub_chart.firstChild);
     }
-
+ 
     // preparing data
 	var jsonObj = {};
     var numYears = maxYear - minYear + 1; 
@@ -372,7 +380,7 @@ function drawCityChart() {
             continue;
         }
 		jsonObj[k] =  new Array();
-
+ 
         var goodPercent = pubTrendByYear[k]["goodPercent"];
         for (var i = 0; i < numYears; i++) {
             if (isNaN(goodPercent[i])) {
@@ -382,16 +390,16 @@ function drawCityChart() {
             jsonObj[k].push({year: strYear, percentGood: goodPercent[i]});
         }
     }
-
+ 
     // add new DIV element for chart
     var chart_div = document.createElement('div');
     chart_div.id = 'area';
     $("#pub_char").html("");
     pub_chart.appendChild(chart_div);
-
+ 
         // begin draw of chart with Protovis
 		minyear = 1829;
-		var dateFormat = pv.Format.date("%y");
+		dateFormat = pv.Format.date("%y");
 		for (newspaper in jsonObj) {
 			jsonObj[newspaper].forEach(function(d) {
 				var mySplitResult = d.year.toString().split(" ");
@@ -402,23 +410,20 @@ function drawCityChart() {
 				} 
 				return d.year = dateFormat.parse(year);
 			});
-
+ 
 		}
 		var counter = 0;
 		
-		var w = 270,
-		    h = 170,
-		   x = pv.Scale.linear(dateFormat.parse("1829"),dateFormat.parse("2010")).range(0, w),
-		    y = pv.Scale.linear(0, 1).range(0, h);
+ 
 		
 		/* The root panel. */
-		var vis = new pv.Panel().width(w).height(h).bottom(20).left(20).right(10).top(5).canvas('area');
+		vis = new pv.Panel().width(w).height(h).bottom(20).left(30).right(10).top(5).canvas('area');
 		
 		/* Y-axis and ticks. */
-		vis.add(pv.Rule).data(y.ticks(5)).bottom(y).strokeStyle(function (d) { if (d) { return "#eee"; } else { return "#000"; } }).anchor("left").add(pv.Label).text(y.tickFormat);
+		vis.add(pv.Rule).data(y.ticks(5)).bottom(y).strokeStyle(function (d) { if (d) { return "#eee"; } else { return "#000"; } }).anchor("left").add(pv.Label).text(function(d) { return Math.round(d*100) + "%";  });
 		
 		/* X-axis and ticks. */
-		vis.add(pv.Rule).data(x.ticks()).visible(function (d) { return d; }).left(x).bottom(-5).height(5).anchor("bottom").add(pv.Label).text(x.tickFormat);
+		vis.add(pv.Rule).data(x.ticks()).visible(function (d) { return d; }).left(x).bottom(-5).height(5).anchor("bottom").add(pv.Label).text(x.tickFormat).textStyle(function(d) { if ((d.toString().split(" ")[3] < currentState.yearRangeMin) || (d.toString().split(" ")[3] > currentState.yearRangeMax)) { return "#aaa" } else { return "#333"} });
 		
 		vis.add(pv.Panel)
     .events("all")
@@ -426,18 +431,18 @@ function drawCityChart() {
     .event("mousewheel", pv.Behavior.zoom())
     .event("pan", transform)
     .event("zoom", transform);
-
+ 
 /** Update the x- and y-scale domains per the new transform. */
 function transform() {
   var t = this.transform().invert();
   var mx = x.invert(vis.mouse().x);
   var y = mx.toString().split(" ")[3];
   var timerange  = (parseInt((t.k-1)*5*1000));
-  x.domain(dateFormat.parse((1829 + (t.x/10) - timerange).toString()), dateFormat.parse((2000 + (t.x/10) + timerange).toString()));
+  x.domain(dateFormat.parse((currentState.yearRangeMin + (t.x/10) - timerange).toString()), dateFormat.parse((currentState.yearRangeMax + (t.x/10) + timerange).toString()));
   vis.render();
 }
-
-
+ 
+ 
 update = function(counter) {
 	forced = "true";
 	if ($("."+counter).is(':checked')){
@@ -461,23 +466,39 @@ check = function(counter, method) {
 		$("."+counter).attr('checked', false);
 	}
 }
-var tx;
+ 
+var tx = 0;
 $("#newspaperlist").html("");
-
+ 
 for (newspapert in jsonObj) {
-			$("#newspaperlist").append("<input type='checkbox' name='display' class='newspaperlist "+counter+"' onchange='update("+counter+");' id='"+newspapert.replace(/\s/g, "")+"' checked/>" + newspapert + "<br />");
+			$("#newspaperlist").append("<input type='checkbox' name='display' class='newspaperlist "+counter+"' onchange='update("+counter+");' id='"+newspapert.replace(/\s/g, "")+"' checked/><a href='#' tooltip='" + newspapert + "'>" + newspapert + "</a><br />");
 			eval("var panel"+ counter + " = vis.add(pv.Panel).def('i', -1);");
 		
 			eval("panel"+counter+".add(pv.Area).data(jsonObj[newspapert]).visible(function() { return true; }).bottom(1).left(function (d) { return x(d.year); }).height(function (d) { return y(d.percentGood); }).event('mouseover', function () { check("+counter+", 'check');panel"+counter+".i(10); selected = "+counter+"; newspaperselected = newspapert;this.render(); }).event('mouseout', function () {  check("+counter+", 'uncheck'); panel"+counter+".i(-1); this.render(); 	}).fillStyle(function (d, p) { if (panel"+counter+".i() < 0) { return 'rgba(238, 238, 238, 0.00001)'; } else { return '"+config.pvcolorRamp[counter]+"'; } }).anchor('top').add(pv.Line).strokeStyle(function() { return '" + config.pvcolorRamp[counter]+ "'; }).lineWidth(function (d, p) { if (panel"+counter+".i() < 0) { return 0.5; } else { return 1; }});");
 		counter++;
 				
 }
-		$("#newspaperlist").append("<input type='button' name='zoom' class='zoomin' value='+' /><br />");
-		$("#newspaperlist").append("<input type='button' name='zoom' class='zoomout' value='-' /><br />");
+$("#remove").html("");
+$("#newspaperlist").after("<div id='remove'><strong>Zoom level</strong><br /><div style='width:30px;display:inline;float:left;'><input type='button' name='zoom' class='zoomin' value='+' /><input type='button' name='zoom' class='zoomout' value='-' /></div><div style='width:90px;font-size:10px;display:inline;float:left;'><input type='radio' name='zoomyears' class='' value='"+currentState.yearRangeMin+"-"+currentState.yearRangeMax+"' checked/> "+currentState.yearRangeMin+"-"+currentState.yearRangeMax+"<br /><input type='radio' name='zoomyears' class='allyears' value='All years' /> All years<br /><input type='radio' name='zoomyears' class='manual' value='Manual' /> Manual <div id='fromselector' style='display:none;'><form id='manualyears'>From <input type='text' size='5' id='fromyear' class='years' /> to <input type='text' size='5' id='toyear' class='years' />  <input type='submit' value='Go' /></form></div></div></div></div>");
+		
 		$(".zoomin").mousehold(function() {
 			tx++;
 			  x.domain(dateFormat.parse((1829 + tx).toString()), dateFormat.parse((2000 - tx).toString()));
   vis.render();
+			
+		});
+		$(".manual").click(function() {
+			$("#fromselector").show();
+			
+		});
+		$("#manualyears").submit(function() {
+			f = $("#fromyear").val();
+			t = $("#toyear").val();
+			redraw(f,t);
+			return false;
+		});
+		$(".allyears").click(function() {
+			redraw(1829,2008);
 			
 		});
 		$(".zoomout").mousehold(function() {
@@ -486,10 +507,13 @@ for (newspapert in jsonObj) {
   vis.render();			
 		});
  
-		
-
-
 		vis.render();
+ 
+ 
+}
+function redraw(fromyear, toyear) {
+  x.domain(dateFormat.parse(fromyear.toString()), dateFormat.parse(toyear.toString()));
+  vis.render();
 }
 
 function drawCityInfo() {
@@ -548,6 +572,7 @@ function drawCityInfo() {
 
             $('#city_info').append(bar);
         });
+        redraw(currentState.yearRangeMin, currentState.yearRangeMax);
         $('#city_info').show('slow');
     }
 }
@@ -921,7 +946,9 @@ function currentStateToURL() {
     <div id="leftcolumn">
       <div id="city_info" style="display: none"></div>
       <br/>
+      <div style="float:left;width:120px">
       <div id="newspaperlist"></div>
+      </div>
       <div id="pub_chart"></div>
       <div id="rightarrow"></div>
     </div>
