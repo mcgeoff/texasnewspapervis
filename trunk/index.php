@@ -532,13 +532,13 @@ function drawCityInfo() {
     if (stats != null) {
         $('#city_info').hide('slow', function() {
             var nGood = stats["mGood"];
-            var nBad  = stats["mTotal"] - nGood;
+            var nTotal  = stats["mTotal"];
             $('#city_info').html(
                 "<span id='cityname'>" + currentState.city + ", " + currentState.state + "</span>, " +
                 currentState.yearRangeMin + " - " +
                 currentState.yearRangeMax + "<br/>" +
-                "<span style=\"color:red;float:left;\">Bad Scan: " + nBad + "</span>" +
-                "<span style=\"color:green;float:right;\">Good Scan: " + nGood + "</span>");
+                "<span style=\"color:green;float:left;\">Good Scan: " + nGood + "</span>" +
+                "<span style=\"color:gray;float:right;\">Total Scan: " + nTotal + "</span>");
 
             // draw bar chart and append to city_info
             var w = $('#city_info').parent().innerWidth() - 20;
@@ -550,24 +550,19 @@ function drawCityInfo() {
                 var ctx = bar.getContext('2d');
 
                 // compute ratio and draw bars
-                var r = 1 - stats["mGood"] / stats["mTotal"];
-                ctx.fillStyle = 'red';
-                ctx.fillRect(0, 0, w * r, h);
+                var r = stats["mGood"] / stats["mTotal"];
                 ctx.fillStyle = 'green';
+                ctx.fillRect(0, 0, w * r, h);
+                ctx.fillStyle = 'gray';
                 ctx.fillRect(w * r, 0, w * (1-r), h);
 
                 // show text for ratios
                 ctx.strokeStyle = 'white';
                 ctx.lineWidth = 1.5;
-                var txtHeight = 6;
-
                 var txt = '' + Math.round(r * 100) + '%';
                 var txtWidth = ctx.measureText(txt).width;
+                var txtHeight = 6;
                 ctx.strokeText(txt, w * r / 2 - txtWidth / 2, h / 2 + txtHeight / 2);
-
-                txt = '' + Math.round((1-r) * 100) + '%';
-                txtWidth = ctx.measureText(txt).width;
-                ctx.strokeText(txt, w - w * (1-r) / 2 - txtWidth / 2, h / 2 + txtHeight / 2);
             }
 
             $('#city_info').append(bar);
