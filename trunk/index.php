@@ -1002,12 +1002,9 @@ $(function() {
   <!-- SIMILE timeline -->
   <div class="wrapper2 movable">
     <div id="simile_timeline" class="timeline-default" style="height: 400px;"></div>
-    <button onClick="setSimileCenterYear('1890');">set date to 1890</button>
-    <button onClick="getSimileCenterYear()">get currently viewed date</button>
-    <button onclick="switchSimileTheme();">Switch theme</button> 
     <script type="text/javascript">
         var timeline = document.getElementById('simile_timeline');
-        timeline.className += ' dark-theme';
+        timeline.className += '';
     </script>
   <div>
 
