@@ -74,8 +74,18 @@ var simile_timeline;    // for simile timeline
 var simile_resizeTimerID = null;
 var shifted; // If shifted is pressed
 
+
+var dateFormat = pv.Format.date("%y");
+var w = 250;
+var h = 170;
+var x = pv.Scale.linear(dateFormat.parse("1829"),dateFormat.parse("2008")).range(0, w);
+var y = pv.Scale.linear(0, 1).range(0, h);
+var vis = new pv.Panel().width(w).height(h).bottom(20).left(30).right(10).top(5).canvas('area');
+var vistype = "zoomed"; // What visualization method are they using?
 var pubTrendByYear = getTrendByYear(statsByPub, minYear, maxYear);
 
+var bestfirst;
+var bestlast;
 /*****************************************************************************/
 // js method section
 /*****************************************************************************/
@@ -357,16 +367,12 @@ function drawSimileTimeline() {
     });
 }
    
-var dateFormat = pv.Format.date("%y");
-var w = 250,
-	h = 170,
-	x = pv.Scale.linear(dateFormat.parse(currentState.yearRangeMin.toString()),dateFormat.parse(currentState.yearRangeMax.toString())).range(0, w),
-	y = pv.Scale.linear(0, 1).range(0, h);
-	
-var vis = new pv.Panel().width(w).height(h).bottom(20).left(30).right(10).top(5).canvas('area');
+
 
 function drawCityChart() {
     // remove previous charts
+    bestlast = 1829;
+    bestfirst = 2008;
     var pub_chart = document.getElementById('pub_chart');
     while (pub_chart.childNodes.length > 0) {
         pub_chart.removeChild(pub_chart.firstChild);
@@ -374,6 +380,7 @@ function drawCityChart() {
  
     // preparing data
 	var jsonObj = {};
+
     var numYears = maxYear - minYear + 1; 
     for (var k in pubTrendByYear) {
         if (pubTrendByYear[k]['city'] != currentState.city) {
@@ -382,14 +389,39 @@ function drawCityChart() {
 		jsonObj[k] =  new Array();
  
         var goodPercent = pubTrendByYear[k]["goodPercent"];
+        var first = null;
+        var second = null;
+        var zerocounter = 0;
+
         for (var i = 0; i < numYears; i++) {
             if (isNaN(goodPercent[i])) {
                 goodPercent[i] = 0;
             }
             var strYear = "" + (i + minYear);
+            if (goodPercent[i] == 0) {
+            	zerocounter++;	
+            }
+            if (goodPercent[i] != 0 && first == null) {
+            	first = (strYear); 	
+            	zerocounter = 0;
+            }
+            if (goodPercent[i] == 0 && zerocounter > 30 && first != null && second == null) {
+            	second = (strYear); 	
+            }
             jsonObj[k].push({year: strYear, percentGood: goodPercent[i]});
         }
+       	if (second == null) {
+       		second = 2008;
+       	}
+        if (first <= bestfirst) {
+        	bestfirst = first;
+        }
+        if (second >= bestlast) {
+        	bestlast = second;	
+        }
     }
+    
+
  
     // add new DIV element for chart
     var chart_div = document.createElement('div');
@@ -413,9 +445,11 @@ function drawCityChart() {
  
 		}
 		var counter = 0;
-		
- 
-		
+		if (vistype == "zoomed") {
+	 		x = pv.Scale.linear(dateFormat.parse((bestfirst - 20).toString()),dateFormat.parse((bestlast).toString())).range(0, w);
+		} else if (vistype == "all") {
+			x = pv.Scale.linear(dateFormat.parse("1829"),dateFormat.parse("2008")).range(0, w);	
+		}	
 		/* The root panel. */
 		vis = new pv.Panel().width(w).height(h).bottom(20).left(30).right(10).top(5).canvas('area');
 		
@@ -423,7 +457,7 @@ function drawCityChart() {
 		vis.add(pv.Rule).data(y.ticks(5)).bottom(y).strokeStyle(function (d) { if (d) { return "#eee"; } else { return "#000"; } }).anchor("left").add(pv.Label).text(function(d) { return Math.round(d*100) + "%";  });
 		
 		/* X-axis and ticks. */
-		vis.add(pv.Rule).data(x.ticks()).visible(function (d) { return d; }).left(x).bottom(-5).height(5).anchor("bottom").add(pv.Label).text(x.tickFormat).textStyle(function(d) { if ((d.toString().split(" ")[3] < currentState.yearRangeMin) || (d.toString().split(" ")[3] > currentState.yearRangeMax)) { return "#aaa" } else { return "#333"} });
+		var ticks = vis.add(pv.Rule).data(x.ticks()).visible(function (d) { return d; }).left(x).bottom(-5).height(5).anchor("bottom").add(pv.Label).text(x.tickFormat).textStyle(function(d) { if ((d.toString().split(" ")[3] < currentState.yearRangeMin) || (d.toString().split(" ")[3] > currentState.yearRangeMax)) { return "#aaa" } else { return "#333"} });
 		
 		vis.add(pv.Panel)
     .events("all")
@@ -438,7 +472,12 @@ function transform() {
   var mx = x.invert(vis.mouse().x);
   var y = mx.toString().split(" ")[3];
   var timerange  = (parseInt((t.k-1)*5*1000));
-  x.domain(dateFormat.parse((currentState.yearRangeMin + (t.x/10) - timerange).toString()), dateFormat.parse((currentState.yearRangeMax + (t.x/10) + timerange).toString()));
+  if (vistype == "zoomed") {
+
+	  x.domain(dateFormat.parse(((bestfirst - 20)+ (t.x/10) - timerange).toString()), dateFormat.parse((parseInt(bestlast) + (t.x/10) + timerange).toString()));
+  } else {
+  	 x.domain(dateFormat.parse((currentState.yearRangeMin + (t.x/10) - timerange).toString()), dateFormat.parse((currentState.yearRangeMax + (t.x/10) + timerange).toString()));
+  }
   vis.render();
 }
  
@@ -479,27 +518,45 @@ for (newspapert in jsonObj) {
 				
 }
 $("#remove").html("");
-$("#newspaperlist").after("<div id='remove'><strong>Zoom level</strong><br /><div style='width:30px;display:inline;float:left;'><input type='button' name='zoom' class='zoomin' value='+' /><input type='button' name='zoom' class='zoomout' value='-' /></div><div style='width:90px;font-size:10px;display:inline;float:left;'><input type='radio' name='zoomyears' class='' value='"+currentState.yearRangeMin+"-"+currentState.yearRangeMax+"' checked/> "+currentState.yearRangeMin+"-"+currentState.yearRangeMax+"<br /><input type='radio' name='zoomyears' class='allyears' value='All years' /> All years<br /><input type='radio' name='zoomyears' class='manual' value='Manual' /> Manual <div id='fromselector' style='display:none;'><form id='manualyears'>From <input type='text' size='5' id='fromyear' class='years' /> to <input type='text' size='5' id='toyear' class='years' />  <input type='submit' value='Go' /></form></div></div></div></div>");
+$("#newspaperlist").after("<div id='remove'><strong>Zoom level</strong><br /><div style='width:30px;display:inline;float:left;'><input type='button' name='zoom' class='zoomin' value='+' /><input type='button' name='zoom' class='zoomout' value='-' /></div><div style='width:90px;font-size:10px;display:inline;float:left;'><input type='radio' name='zoomyears' class='zoomyears' class='' /> "+bestfirst+"-"+bestlast+"<br /><input type='radio' name='zoomyears' class='allyears' value='All years' /> All years<br /><input type='radio' name='zoomyears' class='manual' value='Manual' /> Manual <div id='fromselector' style='display:none;'><form id='manualyears'>From <input type='text' size='5' id='fromyear' class='years' /> to <input type='text' size='5' id='toyear' class='years' />  <input type='submit' value='Go' /></form></div></div></div></div>");
 		
 		$(".zoomin").mousehold(function() {
 			tx++;
-			  x.domain(dateFormat.parse((1829 + tx).toString()), dateFormat.parse((2000 - tx).toString()));
-  vis.render();
+			x.domain(dateFormat.parse((1829 + tx).toString()), dateFormat.parse((2000 - tx).toString()));
+  			vis.render();
 			
 		});
+		// This could be made more streamlined
+		if (vistype == "manual") {
+			$(".manual").attr('checked', true);	
+		}
+		if (vistype == "zoomed") {
+			$(".zoomyears").attr('checked', true);	
+		}
+		if (vistype == "all") {
+			$(".allyears").attr('checked', true);	
+		}
 		$(".manual").click(function() {
 			$("#fromselector").show();
+			vistype = "manual";
 			
 		});
-		$("#manualyears").submit(function() {
-			f = $("#fromyear").val();
-			t = $("#toyear").val();
-			redraw(f,t);
-			return false;
+		$(".zoomyears").click(function() {
+			redraw(bestfirst, bestlast);
+			vistype = "zoomed";
 		});
 		$(".allyears").click(function() {
 			redraw(1829,2008);
+			vistype = "all";
 			
+		});
+
+		$("#manualyears").submit(function() {
+			f = $("#fromyear").val();
+			t = $("#toyear").val();
+			
+			redraw(f,t);
+			return false;
 		});
 		$(".zoomout").mousehold(function() {
 				tx--;
@@ -537,8 +594,8 @@ function drawCityInfo() {
                 "<span id='cityname'>" + currentState.city + ", " + currentState.state + "</span>, " +
                 currentState.yearRangeMin + " - " +
                 currentState.yearRangeMax + "<br/>" +
-                "<span style=\"color:green;float:left;\">Good Scan: " + nGood + "</span>" +
-                "<span style=\"color:gray;float:right;\">Total Scan: " + nTotal + "</span>");
+                "<span style=\"color:green;float:left;\">Good Scan: " + addCommas(nGood) + "</span>" +
+                "<span style=\"color:gray;float:right;\">Total Scan: " + addCommas(nTotal.toString()) + "</span>");
 
             // draw bar chart and append to city_info
             var w = $('#city_info').parent().innerWidth() - 20;
@@ -575,15 +632,12 @@ function drawCityInfo() {
 function drawMarkers(statsByCity, shiftselected) {
 
 	// if shift is being pressed
-	if (shiftselected != null) {
-		
-	
-	} else {
+
 	    // clean up previous markers
-	    while (markers.length > 0) {
+	   while (markers.length > 0) {
 	        markers.pop().setMap(null);
-	    }
-	}
+	   }
+	
 
     // compute data by city, for all years in range
     var data = [];
@@ -781,14 +835,14 @@ function createMapMarkerImage(total, color, highlight, withCenterText) {
         var ctx = canvas.getContext('2d');
         ctx.globalAlpha = 0.5;
         ctx.fillStyle = color;
-        ctx.arc(r, r, rs, 0, Math.PI * 2);
+        ctx.arc(r, r, rs, 0, Math.PI * 2, false);
         ctx.fill();
 
         // highlight current city
         if (highlight) {
             ctx.strokeStyle="#ffff00";
             ctx.lineWidth = 3;
-            ctx.arc(r, r, rs, 0, Math.PI * 2);
+            ctx.arc(r, r, rs, 0, Math.PI * 2, false);
             ctx.stroke();
         }
 
@@ -813,12 +867,7 @@ function createMapMarkerImage(total, color, highlight, withCenterText) {
 
 
 function onResize() {
-    if (simile_resizeTimerID == null) {
-        simile_resizeTimerID = window.setTimeout(function() {
-            simile_resizeTimerID = null;
-            simile_timeline.layout();
-        }, 500);
-    }
+
 }
 
 function setSimileCenterYear(date) {
@@ -870,6 +919,18 @@ function getMarkerSize(total, scaleMethod) {
     return Math.max(5, radius);  // assign minimum
 }
 
+function addCommas(nStr)
+{
+	nStr += '';
+	x4 = nStr.split('.');
+	x1 = x4[0];
+	x2 = x4.length > 1 ? '.' + x4[1] : '';
+	var rgx = /(\d+)(\d{3})/;
+	while (rgx.test(x1)) {
+		x1 = x1.replace(rgx, '$1' + ',' + '$2');
+	}
+	return x1 + x2;
+}
 function shorterNumber(n) {
     var s = '';
     if (n >= 1000000000) {
@@ -922,6 +983,7 @@ function currentStateToURL() {
     hash = encodeURI(hash);
     window.location.hash = "#!" + hash;
 }
+
 $(function() {
 	var simileshown = "false";
 		$(".wrapper2").hide();
