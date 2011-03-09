@@ -457,7 +457,7 @@ function drawCityChart() {
 		vis.add(pv.Rule).data(y.ticks(5)).bottom(y).strokeStyle(function (d) { if (d) { return "#eee"; } else { return "#000"; } }).anchor("left").add(pv.Label).text(function(d) { return Math.round(d*100) + "%";  });
 		
 		/* X-axis and ticks. */
-		var ticks = vis.add(pv.Rule).data(x.ticks()).visible(function (d) { return d; }).left(x).bottom(-5).height(5).anchor("bottom").add(pv.Label).text(x.tickFormat).textStyle(function(d) { if ((d.toString().split(" ")[3] < currentState.yearRangeMin) || (d.toString().split(" ")[3] > currentState.yearRangeMax)) { return "#aaa" } else { return "#333"} });
+		var ticks = vis.add(pv.Rule).data(function(d) { return x.ticks(); }).visible(function (d) { return d; }).left(x).bottom(-5).height(5).anchor("bottom").add(pv.Label).text(x.tickFormat).textStyle(function(d) { if ((d.toString().split(" ")[3] < currentState.yearRangeMin) || (d.toString().split(" ")[3] > currentState.yearRangeMax)) { return "#aaa" } else { return "#333"} });
 		
 		vis.add(pv.Panel)
     .events("all")
