@@ -860,6 +860,10 @@ function onMapTypeChange() {
 // utility functions
 /****************************************************************************/
 
+function name(newspaper) { 	
+ 	return newspaper + "<br />" + "For more details, click <strong>here</strong>";
+}
+
 function isValueInArray(arr2, val) {
 	inArray = false;
 	//console.log(arr2.length);
