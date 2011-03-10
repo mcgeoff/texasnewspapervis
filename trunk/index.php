@@ -112,16 +112,14 @@ $(document).ready(function () {
 		         tooltip: 'leftMiddle'
 		      }
 		   },
-		     
+		       show: { 
+            solo: true // Only show one tooltip at a time
+         },
          style: {
          	name: 'cream', // Give it a crea mstyle to make it stand out
          	tip: 'leftMiddle',
          },
-           show: { 
-           	
-            when: 'click', 
-            solo: true // Only show one tooltip at a time
-         },
+           
            hide: 'unfocus'
            
       });
@@ -148,9 +146,7 @@ $(document).ready(function () {
                screen: true // Keep the tooltip on-screen at all times
             }
          },
-         show: { 
-            solo: true // Only show one tooltip at a time
-         },
+       
          hide: 'unfocus',
          style: {
             tip: true, // Apply a speech bubble tip to the tooltip at the designated tooltip corner
@@ -535,6 +531,7 @@ function transform() {
   var mx = x.invert(vis.mouse().x);
   var y = mx.toString().split(" ")[3];
   var timerange  = (parseInt((t.k-1)*5*1000));
+  $(".manual").attr('checked', true);	
   if (vistype == "zoomed") {
 
 	  x.domain(dateFormat.parse(((bestfirst - 20)+ (t.x/10) - timerange).toString()), dateFormat.parse((parseInt(bestlast) + (t.x/10) + timerange).toString()));
@@ -573,7 +570,7 @@ var tx = 0;
 $("#newspaperlist").html("");
  
 for (newspapert in jsonObj) {
-			$("#newspaperlist").append("<input type='checkbox' name='display' class='newspaperlist "+counter+"' onchange='update("+counter+");' id='"+newspapert.replace(/\s/g, "")+"' checked/><a href='#' tooltip='" + newspapert + "'>" + newspapert + "</a><br />");
+			$("#newspaperlist").append("<input type='checkbox' name='display' class='newspaperlist "+counter+"' onchange='update("+counter+");' id='"+newspapert.replace(/\s/g, "")+"' checked/><a class='newspaperitem' tooltip='" + newspapert + "'>" + newspapert + "</a><br />");
 			eval("var panel"+ counter + " = vis.add(pv.Panel).def('i', -1);");
 		
 			eval("panel"+counter+".add(pv.Area).data(jsonObj[newspapert]).visible(function() { return true; }).bottom(1).left(function (d) { return x(d.year); }).height(function (d) { return y(d.percentGood); }).event('mouseover', function () { check("+counter+", 'check');panel"+counter+".i(10); selected = "+counter+"; newspaperselected = newspapert;this.render(); }).event('mouseout', function () {  check("+counter+", 'uncheck'); panel"+counter+".i(-1); this.render(); 	}).fillStyle(function (d, p) { if (panel"+counter+".i() < 0) { return 'rgba(238, 238, 238, 0.00001)'; } else { return '"+config.pvcolorRamp[counter]+"'; } }).anchor('top').add(pv.Line).strokeStyle(function() { return '" + config.pvcolorRamp[counter]+ "'; }).lineWidth(function (d, p) { if (panel"+counter+".i() < 0) { return 0.5; } else { return 1; }});");
@@ -581,12 +578,13 @@ for (newspapert in jsonObj) {
 				
 }
 $("#remove").html("");
-$("#newspaperlist").after("<div id='remove'><strong>Zoom level</strong><br /><div style='width:30px;display:inline;float:left;'><input type='button' name='zoom' class='zoomin' value='+' /><input type='button' name='zoom' class='zoomout' value='-' /></div><div style='width:90px;font-size:10px;display:inline;float:left;'><input type='radio' name='zoomyears' class='zoomyears' class='' /> "+bestfirst+"-"+bestlast+"<br /><input type='radio' name='zoomyears' class='allyears' value='All years' /> All years<br /><input type='radio' name='zoomyears' class='manual' value='Manual' /> Manual <div id='fromselector' style='display:none;'><form id='manualyears'>From <input type='text' size='5' id='fromyear' class='years' /> to <input type='text' size='5' id='toyear' class='years' />  <input type='submit' value='Go' /></form></div></div></div></div>");
+$("#newspaperlist").after("<div id='remove'><strong>Zoom level</strong><br /><div style='width:30px;display:inline;float:left;'><input type='button' name='zoom' class='zoomin' value='+' /><input type='button' name='zoom' class='zoomout' value='-' /></div><div style='width:90px;font-size:10px;display:inline;float:left;'><input type='radio' name='zoomyears' class='zoomyears' class='' /> "+bestfirst+"-"+bestlast+"<br /><input type='radio' name='zoomyears' class='allyears' value='All years' /> All years<br /><input type='radio' name='zoomyears' class='manual' value='Manual' /> Manual</div></div></div>");
 		
 		$(".zoomin").mousehold(function() {
 			tx = tx + 10;
-			x.domain(dateFormat.parse((1829 + tx).toString()), dateFormat.parse((2000 - tx).toString()));
+			x.domain(dateFormat.parse((parseInt(bestfirst) + tx).toString()), dateFormat.parse((parseInt(bestlast) - tx).toString()));
   			vis.render();
+  			$(".manual").attr('checked', true);	
 			
 		});
 		// This could be made more streamlined
@@ -600,7 +598,7 @@ $("#newspaperlist").after("<div id='remove'><strong>Zoom level</strong><br /><di
 			$(".allyears").attr('checked', true);	
 		}
 		$(".manual").click(function() {
-			$("#fromselector").show();
+			
 			vistype = "manual";
 			
 		});
@@ -614,16 +612,9 @@ $("#newspaperlist").after("<div id='remove'><strong>Zoom level</strong><br /><di
 			
 		});
 
-		$("#manualyears").submit(function() {
-			f = $("#fromyear").val();
-			t = $("#toyear").val();
-			
-			redraw(f,t);
-			return false;
-		});
 		$(".zoomout").mousehold(function() {
 				tx = tx - 10;
-			  x.domain(dateFormat.parse((1829 + tx).toString()), dateFormat.parse((2000 - tx).toString()));
+			  x.domain(dateFormat.parse((parseInt(bestfirst) + tx).toString()), dateFormat.parse((parseInt(bestlast) - tx).toString()));
   vis.render();			
 		});
  
@@ -641,7 +632,8 @@ function drawCityInfo() {
     var stats = {};
 
     for (var i = 0; i < statsByCity.length; i++) {
-
+		//console.log(currentState.city);
+		//console.log(statsByCity);
     	//console.log(isValueInArray(currentState.city,statsByCity[i]["city"]));
         if (isValueInArray(currentState.city,statsByCity[i]["city"]) &&
             yearInRange(statsByCity[i]["year"])) {
@@ -668,8 +660,8 @@ function drawCityInfo() {
 	                "<span id='cityname'>" + city + ", " + currentState.state + "</span>, " +
 	                currentState.yearRangeMin + " - " +
 	                currentState.yearRangeMax + "<br/>" +
-	                "<span style=\"color:green;float:left;\">Good Scan: " + addCommas(nGood) + "</span>" +
-	                "<span style=\"color:gray;float:right;\">Total Scan: " + addCommas(nTotal.toString()) + "</span>");
+	                "<span style=\"color:green;float:left;\">Good words: " + addCommas(nGood) + "</span>" +
+	                "<span style=\"color:gray;float:right;\">Total words: " + addCommas(nTotal.toString()) + "</span>");
 	
 	            // draw bar chart and append to city_info
 	            var w = $('#city_info').parent().innerWidth() - 20;
@@ -862,14 +854,14 @@ function onMapTypeChange() {
 
 function name(newspaper) { 	
  	return newspaper + "<br />" + "For more details, click <strong>here</strong>";
-}
+ }
 
 function isValueInArray(arr2, val) {
 	inArray = false;
-	//console.log(arr2.length);
+	if (arr2.constructor.toString().indexOf("Array") == -1) {
+		arr2 = [arr2];	
+	}
 	for (var ix = 0;ix < arr2.length;ix++) {
-		//console.log(val);
-		//console.log(arr2[ix]);
 		if (val == arr2[ix]) {
 			inArray = true;
 		}
