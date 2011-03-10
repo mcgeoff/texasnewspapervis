@@ -20,7 +20,9 @@
 <link type="text/css" rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.8/themes/base/jquery-ui.css">
 <link rel="stylesheet" type="text/css" href="timeline_style.css"/> 
 <link rel="stylesheet" type="text/css" href="style.css"/>
+
 <script type="text/javascript" src="mousehold.js"></script>
+<script type="text/javascript" src="./jquery.qtip.min.js"></script> 
 
 <script type="text/javascript">
 
@@ -41,7 +43,7 @@ var colorRampThreshold = config.colorRampThreshold;
 // global state variables wrapped together
 var currentState = {
     // update city through update function below
-    city: config.defaultCity,
+    city: [config.defaultCity],
     // never updated
     state: config.defaultState,
     // update year range through google timeline
@@ -99,6 +101,67 @@ $(document).ready(function () {
     drawMap();
     drawTimeline();
     drawSimileTimeline();
+    
+  $('a[tooltip]').each(function()
+   {
+      $(this).qtip({
+         content: name($(this).attr('tooltip')), // Use the tooltip attribute of the element for the content
+         position: {
+		      corner: {
+		         target: 'rightMiddle',
+		         tooltip: 'leftMiddle'
+		      }
+		   },
+		     
+         style: {
+         	name: 'cream', // Give it a crea mstyle to make it stand out
+         	tip: 'leftMiddle',
+         },
+           show: { 
+           	
+            when: 'click', 
+            solo: true // Only show one tooltip at a time
+         },
+           hide: 'unfocus'
+           
+      });
+   });
+   
+   
+    $(".help").qtip(
+      {
+         content: {
+            // Set the text to an image HTML string with the correct src URL to the loading image you want to use
+            //text: '<img class="throbber" src="throbber.gif" alt="Loading..." />',
+            url: 'help.html', // Use the rel attribute of each element for the url to load
+            title: {
+               text: 'Help', // Give the tooltip a title using each elements text
+               button: 'Close' // Show a close link in the title
+            }
+         },
+         position: {
+            corner: {
+               target: 'bottomMiddle', // Position the tooltip above the link
+               tooltip: 'topMiddle'
+            },
+            adjust: {
+               screen: true // Keep the tooltip on-screen at all times
+            }
+         },
+         show: { 
+            solo: true // Only show one tooltip at a time
+         },
+         hide: 'unfocus',
+         style: {
+            tip: true, // Apply a speech bubble tip to the tooltip at the designated tooltip corner
+            border: {
+               width: 0,
+               radius: 4
+            },
+            name: 'light', // Use the default light style
+            width: 300 // Set the tooltip width
+         }
+      })
 });
 
 /*****************************************************************************/
@@ -383,7 +446,7 @@ function drawCityChart() {
 
     var numYears = maxYear - minYear + 1; 
     for (var k in pubTrendByYear) {
-        if (pubTrendByYear[k]['city'] != currentState.city) {
+        if (!isValueInArray(currentState.city, pubTrendByYear[k]['city'])) {
             continue;
         }
 		jsonObj[k] =  new Array();
@@ -521,7 +584,7 @@ $("#remove").html("");
 $("#newspaperlist").after("<div id='remove'><strong>Zoom level</strong><br /><div style='width:30px;display:inline;float:left;'><input type='button' name='zoom' class='zoomin' value='+' /><input type='button' name='zoom' class='zoomout' value='-' /></div><div style='width:90px;font-size:10px;display:inline;float:left;'><input type='radio' name='zoomyears' class='zoomyears' class='' /> "+bestfirst+"-"+bestlast+"<br /><input type='radio' name='zoomyears' class='allyears' value='All years' /> All years<br /><input type='radio' name='zoomyears' class='manual' value='Manual' /> Manual <div id='fromselector' style='display:none;'><form id='manualyears'>From <input type='text' size='5' id='fromyear' class='years' /> to <input type='text' size='5' id='toyear' class='years' />  <input type='submit' value='Go' /></form></div></div></div></div>");
 		
 		$(".zoomin").mousehold(function() {
-			tx++;
+			tx = tx + 10;
 			x.domain(dateFormat.parse((1829 + tx).toString()), dateFormat.parse((2000 - tx).toString()));
   			vis.render();
 			
@@ -559,7 +622,7 @@ $("#newspaperlist").after("<div id='remove'><strong>Zoom level</strong><br /><di
 			return false;
 		});
 		$(".zoomout").mousehold(function() {
-				tx--;
+				tx = tx - 10;
 			  x.domain(dateFormat.parse((1829 + tx).toString()), dateFormat.parse((2000 - tx).toString()));
   vis.render();			
 		});
@@ -575,55 +638,68 @@ function redraw(fromyear, toyear) {
 
 function drawCityInfo() {
     // update city info in right column
-    var stats = null;
+    var stats = {};
+
     for (var i = 0; i < statsByCity.length; i++) {
-        if (statsByCity[i]["city"] == currentState.city &&
+
+    	//console.log(isValueInArray(currentState.city,statsByCity[i]["city"]));
+        if (isValueInArray(currentState.city,statsByCity[i]["city"]) &&
             yearInRange(statsByCity[i]["year"])) {
-            if (stats == null) {
-                stats = {mGood: 0, mTotal: 0};
+
+            if (stats[statsByCity[i]["city"]] == null) {
+                stats[statsByCity[i]["city"]] = {mGood: 0, mTotal: 0};
             }
-            stats["mGood"] += parseInt(statsByCity[i]["mGood"]);
-            stats["mTotal"] += parseInt(statsByCity[i]["mTotal"]);
+            stats[statsByCity[i]["city"]]["mGood"] += parseInt(statsByCity[i]["mGood"]);
+            stats[statsByCity[i]["city"]]["mTotal"] += parseInt(statsByCity[i]["mTotal"]);
         }
     }
+    //console.log(stats);
     if (stats != null) {
-        $('#city_info').hide('slow', function() {
-            var nGood = stats["mGood"];
-            var nTotal  = stats["mTotal"];
-            $('#city_info').html(
-                "<span id='cityname'>" + currentState.city + ", " + currentState.state + "</span>, " +
-                currentState.yearRangeMin + " - " +
-                currentState.yearRangeMax + "<br/>" +
-                "<span style=\"color:green;float:left;\">Good Scan: " + addCommas(nGood) + "</span>" +
-                "<span style=\"color:gray;float:right;\">Total Scan: " + addCommas(nTotal.toString()) + "</span>");
-
-            // draw bar chart and append to city_info
-            var w = $('#city_info').parent().innerWidth() - 20;
-            var h = 20;
-            var bar = document.createElement('canvas');
-            bar.width = w;
-            bar.height = h;
-            if (bar.getContext) {
-                var ctx = bar.getContext('2d');
-
-                // compute ratio and draw bars
-                var r = stats["mGood"] / stats["mTotal"];
-                ctx.fillStyle = 'green';
-                ctx.fillRect(0, 0, w * r, h);
-                ctx.fillStyle = 'gray';
-                ctx.fillRect(w * r, 0, w * (1-r), h);
-
-                // show text for ratios
-                ctx.strokeStyle = 'white';
-                ctx.lineWidth = 1.5;
-                var txt = '' + Math.round(r * 100) + '%';
-                var txtWidth = ctx.measureText(txt).width;
-                var txtHeight = 6;
-                ctx.strokeText(txt, w * r / 2 - txtWidth / 2, h / 2 + txtHeight / 2);
-            }
+    	//console.log("hitting here");
+    	$('#city_info').html("");
+    	for (var city in stats) {
+    		//console.log(city);
+    		//console.log(stats);
+	        //$('#city_info').hide('slow', function() {
+	            var nGood = stats[city]["mGood"];
+	            var nTotal  = stats[city]["mTotal"];
+	            
+	            $('#city_info').append(
+	                "<span id='cityname'>" + city + ", " + currentState.state + "</span>, " +
+	                currentState.yearRangeMin + " - " +
+	                currentState.yearRangeMax + "<br/>" +
+	                "<span style=\"color:green;float:left;\">Good Scan: " + addCommas(nGood) + "</span>" +
+	                "<span style=\"color:gray;float:right;\">Total Scan: " + addCommas(nTotal.toString()) + "</span>");
+	
+	            // draw bar chart and append to city_info
+	            var w = $('#city_info').parent().innerWidth() - 20;
+	            var h = 20;
+	            var bar = document.createElement('canvas');
+	            bar.width = w;
+	            bar.height = h;
+	            if (bar.getContext) {
+	                var ctx = bar.getContext('2d');
+	
+	                // compute ratio and draw bars
+	                var r = stats[city]["mGood"] / stats[city]["mTotal"];
+	                ctx.fillStyle = 'green';
+	                ctx.fillRect(0, 0, w * r, h);
+	                ctx.fillStyle = 'gray';
+	                ctx.fillRect(w * r, 0, w * (1-r), h);
+	
+	                // show text for ratios
+	                ctx.strokeStyle = 'white';
+	                ctx.lineWidth = 1.5;
+	                var txt = '' + Math.round(r * 100) + '%';
+	                var txtWidth = ctx.measureText(txt).width;
+	                var txtHeight = 6;
+	                ctx.strokeText(txt, w * r / 2 - txtWidth / 2, h / 2 + txtHeight / 2);
+	            }
+	        
 
             $('#city_info').append(bar);
-        });
+        //});
+    	}
         redraw(currentState.yearRangeMin, currentState.yearRangeMax);
         $('#city_info').show('slow');
     }
@@ -689,7 +765,7 @@ function drawMarkers(statsByCity, shiftselected) {
         var color = colorRamp[bin];
 
         // generate 2 images, for mouseover and mouseout, default to mouseout
-        var highlight = (currentState.city == data[i]["city"]);
+        var highlight = isValueInArray(currentState.city, data[i]["city"]);
         var imageMouseOver = createMapMarkerImage(total, color, highlight, true);
         var imageMouseOut  = createMapMarkerImage(total, color, highlight, false);
 
@@ -728,6 +804,7 @@ function drawColorRangeDisplay() {
 
 function updateCity(city) {
     // record newly updated city
+    // always comes in as array
     currentState.city = city;
     onCityChange();
 }
@@ -782,6 +859,20 @@ function onMapTypeChange() {
 /****************************************************************************/
 // utility functions
 /****************************************************************************/
+
+function isValueInArray(arr2, val) {
+	inArray = false;
+	//console.log(arr2.length);
+	for (var ix = 0;ix < arr2.length;ix++) {
+		//console.log(val);
+		//console.log(arr2[ix]);
+		if (val == arr2[ix]) {
+			inArray = true;
+		}
+	}
+	return inArray;
+}
+
 function yearInRange(year) {
     // currently only work on SIMILE timeline
     var inRange = false;
@@ -803,11 +894,20 @@ function addMarkerListener(marker) {
     evt = evt || window.event;
     if (evt.keyCode == 16) {
        	shifted = null;
+       	currentState.city = config.defaultCity;
     	}
 	};
 	
     google.maps.event.addListener(marker, "click", function() {
-        updateCity(marker.city);
+        allcities = new Array();
+        if (shifted) {
+        	allcities = allcities.concat(currentState.city);
+        	allcities.push(marker.city);
+        	updateCity(allcities);	
+        } else {
+        	allcities.push(marker.city);
+        	updateCity(allcities);	
+        }
         drawMarkers(statsByCity, shifted);
     });
 
@@ -954,6 +1054,10 @@ function URLToCurrentState() {
     for (var k in currentState) {
         var v = decodeValueFromURL(hash, k);
         if (v.length > 0) {
+            if (v.split(",").length > 1) {
+            	v = v.split(",");
+            	//console.log(v);
+            }
             if (isInteger[k]) {
                 currentState[k] = parseInt(v);
                 currentState[k] = isNaN(currentState[k]) ? 0 : currentState[k];
@@ -1053,6 +1157,7 @@ $(function() {
         <form>
           <input type="radio" name="scale_select" value="log">Log
           <input type="radio" name="scale_select" value="linear">Linear
+          <a href="#" class="help" rel="help.html"><img src="help.png" /></a> 
         </form>
       </div>
       <!-- size legend -->
