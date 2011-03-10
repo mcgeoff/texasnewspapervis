@@ -15,7 +15,13 @@ h1 { font-size:30px !important;font-family: 'Goudy Bookletter 1911', arial, seri
     width: 40%;
  
 }
-
+.newspaperitem {
+	text-decoration:none;
+}
+.newspaperitem:hover {
+	background:#eee;
+	cursor:pointer;	
+}
 #title_block .content {
 	   padding-left:10px;
 }
