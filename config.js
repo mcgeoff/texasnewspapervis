@@ -1,6 +1,6 @@
 
 var config = {
-    title: 'Examining OCR Quality',
+    title: 'Examining OCR Quality!',
     subTitle: 'Scans of Texas Newspapers, 1829-2008',
     introText:'introductory text goes here, to be configured in <a href="config.js">config.js</a>',
 
