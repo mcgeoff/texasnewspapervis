@@ -7,6 +7,18 @@
 
 
 <!-- Dependencies --> 
+
+
+<script type="text/javascript" src="./cufon-yui.js"></script>
+<script type="text/javascript" src="./Glarendon_500.font.js"></script>
+
+		<script type="text/javascript">
+			Cufon.replace('h1'); // Works without a selector engine
+			Cufon.replace('#cityname'); // Requires a selector engine for IE 6-7, see above
+		</script>
+		
+		<script type="text/javascript"> Cufon.now(); </script>
+
 <script type="text/javascript" src="./config.js"></script>
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
@@ -16,13 +28,20 @@
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.8/jquery-ui.min.js"></script>
 <script type="text/javascript" src="http://vis.stanford.edu/protovis/protovis-r3.2.js"></script>
 
-<link rel="stylesheet" type="text/css" href="http://www.simile-widgets.org/timeline/examples/styles.css"/> 
+<!--link rel="stylesheet" type="text/css" href="shttp://www.simile-widgets.org/timeline/examples/styles.css"/--> 
+
+<link rel="stylesheet" type="text/css" href="./commonFromSimile.css"/> 
+
 <link type="text/css" rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.8/themes/base/jquery-ui.css">
-<link rel="stylesheet" type="text/css" href="timeline_style.css"/> 
+<link rel="stylesheet" type="text/css" href="stimeline_style.css"/> 
+
 <link rel="stylesheet" type="text/css" href="style.css"/>
 
 <script type="text/javascript" src="mousehold.js"></script>
 <script type="text/javascript" src="./jquery.qtip.min.js"></script> 
+
+
+
 
 <script type="text/javascript">
 
@@ -1108,10 +1127,19 @@ $(function() {
       <div id="title_block">
       </div>
       <!-- timeline control -->
+     <div class="widget_header">
+      <h3>Time</h3>&nbsp;
+      <p>Quantity of Recognized and Unrecognized Text, 1828-2008</p>
+      </div>
+      <!-- google widget -->
       <div id="timeline_vis"> </div>
   </div>
 
   <div class="wrapper">
+    <div class="widget_header">
+      <h3>&nbsp;Space</h3>&nbsp;
+      <p>Collection Quantity and Quality by Location</p>
+    </div>
     <!-- left column -->
     <div id="leftcolumn">
       <div id="city_info" style="display: none"></div>
@@ -1122,7 +1150,7 @@ $(function() {
       <div id="pub_chart"></div>
       <div id="rightarrow"></div>
     </div>
-
+	
     <!-- center column -->
     <div id="centercolumn">
       <!-- canvas for map -->
@@ -1131,23 +1159,28 @@ $(function() {
 
     <!-- right column -->
     <div id="rightcolumn">
-      <!-- color legend -->
+    <div class="widget_header">
+    <h3>Legend</h3><br />
+    <p>Ratio of Good to Bad Words</p>
+    </div>
+    <!-- color legend -->
       <div width="200">
         <div>
-            <canvas id="legend_color_canvas" height="30"></canvas>
-            <div id="legend_slider"></div>
+            <canvas id="legend_color_canvas" height="40"></canvas>
+            <div id="legend_slider"><div id="ui-slider-range"></div></div>
         </div>
-        <br/> <br/> <br/>
-        <div>
-          Publications with correct percentage 
-          <span id="color_range_left"></span>
+        <br \>
+        <br \>
+        <br \>
+        <div class="legend_text"><i>
+          Showing cities having publications with  
+          <b><span id="color_range_left"></span>
           -
-          <span id="color_range_right"></span>
-          .
-        </div>
+          <span id="color_range_right"></span></b> correct words.</i>
+          </div>
       </div>
       <br/>
-      <p>Number of words scanned with scaling:</p>
+      <div class="legend_text">Circle Scaling:</div>
       <!-- scale selector -->
       <div>
         <form>
@@ -1158,18 +1191,24 @@ $(function() {
       </div>
       <!-- size legend -->
       <div id="legend_size"></div>
+      <div class="legend_text"><i>Circle size is relative to total number of words scanned. Color indicates overall scan quality.</i></div>
        <button style="margin-top:260px;color:#333;cursor:pointer;width:500px;height:30px;width:100%;float:left;clear:both;" class="clickexpand movable">Click to show/hide historic timeline</button>
     </div>
   </div>
 
   <!-- SIMILE timeline -->
   <div class="wrapper2 movable">
-    <div id="simile_timeline" class="timeline-default" style="height: 400px;"></div>
+    <div class="widget_header">
+      <h3>&nbsp;Context</h3>&nbsp;
+      <p>Texas History Timeline</p>
+    </div>
+    <div id="simile_timeline" class="timeline-default" style="height: 400px; width: 96%"></div>
     <script type="text/javascript">
         var timeline = document.getElementById('simile_timeline');
         timeline.className += '';
     </script>
   <div>
+
 
 </body>
 </html>
