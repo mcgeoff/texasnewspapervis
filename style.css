@@ -1,30 +1,74 @@
+body {
+	margin-top: 0px;
+	margin-left:5px;
+    padding:            0px;
+    background-color:   #fff;
+    color:              #222;
+    font-family:        Arial, Helvetica, "Lucida Grande", sans-serif;
+    quotes:             "\201C" "\201E" "\2018" "\2019";
+
+}
 
 .wrapper {
     position: relative;
     float: left;
     left: 0px;
-    width: 100%;
-    margin-bottom: 10px;
+    width: 96%;
+    margin-top: 10px;
     background-color: #fff;
 }
-h1 { font-size:30px !important;font-family: 'Goudy Bookletter 1911', arial, serif; }
+
+h1 { font-size:24px !important;font-family: Glarendon,'Goudy Bookletter 1911', arial, serif; margin-top:0px; margin-bottom:0px;}
+
+#title_block h3 { font-size:16px; color:#666; font-weight:normal !important;font-family: Arial, Helvetica, sans-serif; margin-top:2px; }
+
+#title_block p{
+	font-family: Arial, Helvetica, Sans-serif;
+	font-size: 13px;
+	line-height:16px;
+	color:#000;
+ }
 
 #title_block {
-    float: left;
-    left: 5px;
-    width: 40%;
+   float: left;
+    left: 10px;
+    width: 38%;
+    margin-right: 20px;
  
 }
+
+#title_block .content {
+	   padding-left:10px;
+}
+
+.widget_header {
+	margin-top:0px;
+	font-family: Arial, Helvetica, Sans-serif;
+
+}
+
+.widget_header h3{
+	display:inline;	
+	font-size: 18px;
+	font-weight: normal;
+	color:#999;
+}
+
+.widget_header p{
+	display:inline;	
+	font-size: 12px;
+}
+
+
 .newspaperitem {
 	text-decoration:none;
 }
+
 .newspaperitem:hover {
 	background:#eee;
 	cursor:pointer;	
 }
-#title_block .content {
-	   padding-left:10px;
-}
+
 #timeline_vis {
     float: left;
     left: 15px;
@@ -37,7 +81,8 @@ h1 { font-size:30px !important;font-family: 'Goudy Bookletter 1911', arial, seri
     position: absolute;
     left: 20px;
     margin: 20px;
-    border: 5px groove orange;
+    sborder: 5px groove orange;
+    border: 2px groove #000;
     padding: 10px;
     background: rgb(255, 255, 255);
     background: rgba(255, 255, 255, 1);
@@ -53,7 +98,15 @@ h1 { font-size:30px !important;font-family: 'Goudy Bookletter 1911', arial, seri
 #rightcolumn {
     width: 15%;
     float: left;
-    padding: 5px;
+    margin-top: 10px;
+    margin-left:10px;
+    spadding: 10px;
+}
+
+#rightcolumn #legend_area {
+  	display:block;
+  	margin-top:0px;
+  	margin-bottom:25px;
 }
 
 #map_canvas {
@@ -78,6 +131,7 @@ h1 { font-size:30px !important;font-family: 'Goudy Bookletter 1911', arial, seri
 	background:#fff;
 	font-size:11px;	
 }
+
 #rightarrow {
 	width:33px;
 	height:66px;
@@ -88,13 +142,22 @@ h1 { font-size:30px !important;font-family: 'Goudy Bookletter 1911', arial, seri
 }
 
 #simile_timeline {
-    font-family: Trebuchet MS, Helvetica, Arial, sans serif;
+    font-family: Arial, Helvetica, sans serif;
     font-size: 8pt;
     border: 1px solid #aaa;
 }
-    #cityname {
-    font-size:20px;	
-    }
+
+#cityname {
+	font-size:20px;
+	font-family: Glarendon, Arial, Sans-Serif;
+}
+
+
+.legend_text {
+	margin-top:10px;
+	font-size:14px;
+}
+
 #legend_slider {
     float: left;
     clear: left;
@@ -102,15 +165,19 @@ h1 { font-size:30px !important;font-family: 'Goudy Bookletter 1911', arial, seri
     margin-left: 3px;
     position: absolute;
 }
-#legend_slider .ui-slider-range {
-    background: none;
+#legend_slider #ui-slider-range {
+     background: url(slider_groove.png);
+     background-repeat:no-repeat;
+   	 width:200px;
+  	 height:10px;
+	 margin-top:35px;
 }
 .ui-slider .ui-slider-handle { 
-    background: url(handle.png);
+   background: url(slider_handle.png);
     border:none;
-    width:27px;
-    height:17px;
-    margin-top:25px;
+    width:27 px;
+    height:20 px;
+    margin-top:35px;
     }
 #legend_color_canvas {
     width: 180px;
