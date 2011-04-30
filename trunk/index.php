@@ -367,7 +367,8 @@ function drawSizeLegendChart() {
         var ctx = canvas.getContext('2d');
         ctx.beginPath();
         ctx.arc(rl, rl, rl, 0, 2 * Math.PI, true);
-        ctx.fillStyle = colorRamp[colorRamp.length - 1];
+        //ctx.fillStyle = colorRamp[colorRamp.length - 1];
+        ctx.fillStyle = '#fff';
         ctx.fill();
         ctx.stroke();
 
@@ -1122,7 +1123,12 @@ $(function() {
 </head>
 
 <body onresize="onResize();"> 
+  <!-- Header Bar-->
+  <div class="header_area"><a href="http://mappingtexts.org"><img src="mappingtexts_header_title.png" /></a></div>
+  
   <!-- Title Bar -->
+  
+  
   <div class="wrapper">
       <div id="title_block">
       </div>
@@ -1136,6 +1142,7 @@ $(function() {
   </div>
 
   <div class="wrapper">
+  <hr>
     <div class="widget_header">
       <h3>&nbsp;Space</h3>&nbsp;
       <p>Collection Quantity and Quality by Location</p>
@@ -1192,17 +1199,18 @@ $(function() {
       <!-- size legend -->
       <div id="legend_size"></div>
       <div class="legend_text"><i>Circle size is relative to total number of words scanned. Color indicates overall scan quality.</i></div>
-       <button style="margin-top:260px;color:#333;cursor:pointer;width:500px;height:30px;width:100%;float:left;clear:both;" class="clickexpand movable">Click to show/hide historic timeline</button>
+       <button style="margin-top:100px;color:#333;cursor:pointer;width:500px;height:30px;width:100%;float:left;clear:both;" class="clickexpand movable">Click to show/hide historic timeline</button>
     </div>
   </div>
 
   <!-- SIMILE timeline -->
   <div class="wrapper2 movable">
+  <hr>
     <div class="widget_header">
       <h3>&nbsp;Context</h3>&nbsp;
       <p>Texas History Timeline</p>
     </div>
-    <div id="simile_timeline" class="timeline-default" style="height: 400px; width: 96%"></div>
+    <div id="simile_timeline" class="timeline-default" style="height: 400px; width: 100%"></div>
     <script type="text/javascript">
         var timeline = document.getElementById('simile_timeline');
         timeline.className += '';
