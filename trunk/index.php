@@ -873,7 +873,7 @@ function onMapTypeChange() {
 /****************************************************************************/
 
 function name(newspaper) { 	
- 	return newspaper + "<br />" + "For more details test, click <strong>here</strong>";
+ 	return newspaper + "<br />" + "For more details, click <strong>here</strong>";
  }
 
 function isValueInArray(arr2, val) {
