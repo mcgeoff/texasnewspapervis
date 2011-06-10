@@ -9,7 +9,10 @@ body {
 
 }
 
-
+.qtip-content a {
+	color:#773200;
+	
+}
 .header_area {
 	background:url(header_bg.jpg);
     background-repeat:repeat-x;
