@@ -14,7 +14,7 @@
 
 		<script type="text/javascript">
 			Cufon.replace('h1'); // Works without a selector engine
-			Cufon.replace('#cityname'); // Requires a selector engine for IE 6-7, see above
+			
 		</script>
 		
 		<script type="text/javascript"> Cufon.now(); </script>
@@ -33,7 +33,6 @@
 <link rel="stylesheet" type="text/css" href="./commonFromSimile.css"/> 
 
 <link type="text/css" rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.8/themes/base/jquery-ui.css">
-<link rel="stylesheet" type="text/css" href="stimeline_style.css"/> 
 
 <link rel="stylesheet" type="text/css" href="style.css"/>
 
@@ -112,7 +111,7 @@ var bestlast;
 /*****************************************************************************/
 // include google visualization widgets
 google.load('visualization', '1', {'packages':['annotatedtimeline', 'corechart']});
-
+ 
 $(document).ready(function () {
     URLToCurrentState();
     drawTitleBlock();
@@ -121,28 +120,7 @@ $(document).ready(function () {
     drawTimeline();
     drawSimileTimeline();
     
-  $('a[tooltip]').each(function()
-   {
-      $(this).qtip({
-         content: name($(this).attr('tooltip')), // Use the tooltip attribute of the element for the content
-         position: {
-		      corner: {
-		         target: 'rightMiddle',
-		         tooltip: 'leftMiddle'
-		      }
-		   },
-		       show: { 
-            solo: true // Only show one tooltip at a time
-         },
-         style: {
-         	name: 'cream', // Give it a crea mstyle to make it stand out
-         	tip: 'leftMiddle',
-         },
-           
-           hide: 'unfocus'
-           
-      });
-   });
+   
    
    
     $(".help").qtip(
@@ -590,7 +568,7 @@ var tx = 0;
 $("#newspaperlist").html("");
  
 for (newspapert in jsonObj) {
-			$("#newspaperlist").append("<input type='checkbox' name='display' class='newspaperlist "+counter+"' onchange='update("+counter+");' id='"+newspapert.replace(/\s/g, "")+"' checked/><a class='newspaperitem' tooltip='" + newspapert + "'>" + newspapert + "</a><br />");
+			$("#newspaperlist").append("<input type='checkbox' name='display' class='newspaperlist "+counter+"' onchange='update("+counter+");' id='"+newspapert.replace(/\s/g, "")+"' checked/><a class='newspaperitem' href='http://texashistory.unt.edu/search/?q="+newspapert+"&t=fulltext&fq=dc_type%3Atext_newspaper' target='unt'>" + newspapert + "</a><br />");
 			eval("var panel"+ counter + " = vis.add(pv.Panel).def('i', -1);");
 		
 			eval("panel"+counter+".add(pv.Area).data(jsonObj[newspapert]).visible(function() { return true; }).bottom(1).left(function (d) { return x(d.year); }).height(function (d) { return y(d.percentGood); }).event('mouseover', function () { check("+counter+", 'check');panel"+counter+".i(10); selected = "+counter+"; newspaperselected = newspapert;this.render(); }).event('mouseout', function () {  check("+counter+", 'uncheck'); panel"+counter+".i(-1); this.render(); 	}).fillStyle(function (d, p) { if (panel"+counter+".i() < 0) { return 'rgba(238, 238, 238, 0.00001)'; } else { return '"+config.pvcolorRamp[counter]+"'; } }).anchor('top').add(pv.Line).strokeStyle(function() { return '" + config.pvcolorRamp[counter]+ "'; }).lineWidth(function (d, p) { if (panel"+counter+".i() < 0) { return 0.5; } else { return 1; }});");
@@ -598,7 +576,7 @@ for (newspapert in jsonObj) {
 				
 }
 $("#remove").html("");
-$("#newspaperlist").after("<div id='remove'><strong>Zoom level</strong><br /><div style='width:30px;display:inline;float:left;'><input type='button' name='zoom' class='zoomin' value='+' /><input type='button' name='zoom' class='zoomout' value='-' /></div><div style='width:90px;font-size:10px;display:inline;float:left;'><input type='radio' name='zoomyears' class='zoomyears' class='' /> "+bestfirst+"-"+bestlast+"<br /><input type='radio' name='zoomyears' class='allyears' value='All years' /> All years<br /><input type='radio' name='zoomyears' class='manual' value='Manual' /> Manual</div></div></div>");
+$("#newspaperlist").after("<div id='remove'><strong>Zoom level</strong><br /><div style='width:30px;display:inline;float:left;'><input type='button' name='zoom' class='zoomin' value='+' /><input type='button' name='zoom' class='zoomout' value='-' /></div><div style='width:90px;font-size:10px;display:inline;float:left;'><input type='radio' name='zoomyears' class='zoomyears' class='' />To data<br /><input type='radio' name='zoomyears' class='allyears' value='All years' /> All years<br /><input type='radio' name='zoomyears' class='manual' value='Manual' /> Manual</div></div></div>");
 		
 		$(".zoomin").mousehold(function() {
 			tx = tx + 10;
@@ -819,6 +797,7 @@ function updateCity(city) {
     // always comes in as array
     currentState.city = city;
     onCityChange();
+    Cufon.replace('#cityname'); // Requires a selector engine for IE 6-7, see above
 }
 
 function onCityChange() {
@@ -873,7 +852,7 @@ function onMapTypeChange() {
 /****************************************************************************/
 
 function name(newspaper) { 	
- 	return newspaper + "<br />" + "For more details, click <strong>here</strong>";
+ 	return newspaper + "<br />" + "For more details, click <a href='http://texashistory.unt.edu/search/?q="+newspaper+"&t=fulltext&fq=dc_type%3Atext_newspaper' target='_new'><strong>here</strong></a>";
  }
 
 function isValueInArray(arr2, val) {
@@ -981,10 +960,6 @@ function createMapMarkerImage(total, color, highlight, withCenterText) {
     return image;
 }
 
-
-function onResize() {
-
-}
 
 function setSimileCenterYear(date) {
     simile_timeline.getBand(0).setCenterVisibleDate(new Date(date, 0, 1));
@@ -1122,7 +1097,7 @@ $(function() {
 
 </head>
 
-<body onresize="onResize();"> 
+<body> 
   <!-- Header Bar-->
   <div class="header_area"><a href="http://mappingtexts.org"><img src="mappingtexts_header_title.png" /></a></div>
   
