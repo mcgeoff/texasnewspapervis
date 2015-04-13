@@ -1,0 +1,1 @@
+Texas Newspaper OCR quality visualization, done at Lane Center
